@@ -11,6 +11,7 @@ def main():
     parser = argparse.ArgumentParser(description="Export VAREN meshes to a specified folder.")
     parser.add_argument('--model_path', type=str, default='models/varen/', help='Location of saved model files.')
     parser.add_argument('--output_path', type=str, default="", help="Folder to save the exported mesh files. Default is the current directory.")
+    parser.add_argument('--save-meshes', action='store_true', help="Option to save meshes.")
     args = parser.parse_args()
 
     output_path = args.output_path
@@ -33,8 +34,8 @@ def main():
     NUM_JOINTS = varen_base.NUM_JOINTS
 
 
-    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.5*0
-    shape = torch.rand(1, 10) * 0.5 
+    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
+    shape = torch.rand(1, 10) 
 
     # Process base model
     model_output_base = varen_base(body_pose=pose, betas=shape)
@@ -63,11 +64,14 @@ def main():
     scene.show()
 
     # Export meshes to files
-    base_file_path = os.path.join(output_path, 'VAREN_base.ply') if output_path else 'VAREN_base.ply'
-    full_file_path = os.path.join(output_path, 'VAREN_full.ply') if output_path else 'VAREN_full.ply'
-
-    trimesh.exchange.export.export_mesh(mesh_base, base_file_path)
-    trimesh.exchange.export.export_mesh(mesh_ext, full_file_path)
+    if args.save_meshes:
+        base_file_path = os.path.join(output_path, 'VAREN_base.ply') if output_path else 'VAREN_base.ply'
+        full_file_path = os.path.join(output_path, 'VAREN_full.ply') if output_path else 'VAREN_full.ply'
+    
+        trimesh.exchange.export.export_mesh(mesh_base, base_file_path)
+        trimesh.exchange.export.export_mesh(mesh_ext, full_file_path)
+        print(f"Saved 'VAREN_base_base.ply' Meshes to /{output_path}")
+        print(f"Saved 'VAREN_base_full.ply' Meshes to /{output_path}")
 
 
 # add arguments for output folder path

@@ -506,11 +506,8 @@ class VAREN(HSMAL):
         
         if self.use_muscle_deformations:
             # A set of decoders, one for each muscle
-            # get betas
-            print("DEBUG || body_pose: ", full_pose.shape) # Needs full pose
-            print("DEBUG || betas: ", betas.shape) # not sure here....
 
-            betas_muscle, A = self.betas_muscle_predictor.forward(full_pose, betas) # correct. Called 
+            betas_muscle, A = self.betas_muscle_predictor.forward(full_pose, betas) # correct.
 
             muscle_deformer = MuscleDeformer(betas_muscle, self.Bm, self.muscle_idxs)
         else:
@@ -564,14 +561,11 @@ class VAREN(HSMAL):
         self.all_muscle_idxs = all_idxs
 
         # Define the vertices that have no muscle to be associated
-        num_verts = self.get_num_verts()
         num_joints = self.get_num_joints()
 
-        unused_idxs = list(set(all_idxs) & set(range(num_verts)))
-
         # Define part-muscle assciation function
-        #A = torch.zeros((num_joints - 1, self.num_muscles))
         muscle_associations = torch.zeros((num_joints, self.num_muscles))
+        
         # Only assign for the parts that we consider affect the muscles (muscle_parts)
         for part in self.muscle_parts_idx:
             # Vertices of this part
@@ -628,7 +622,7 @@ class VAREN(HSMAL):
             shape_beta_for_muscles = self.shape_betas_for_muscles
             )
         print("Loading model from: ", checkpoint_path)
-        chkpt = torch.load(checkpoint_path)
+        chkpt = torch.load(checkpoint_path, weights_only=True)
         self.Bm.load_state_dict(chkpt['Bm']) # Should pull what it needs
         self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Should pull what it needs
 
@@ -642,7 +636,7 @@ class BetasMusclePredictor(nn.Module):
 
         self.shape_betas_for_muscles = shape_beta_for_muscles
         self.num_parts, self.num_muscle = muscle_associations.shape
-        r_dim = 4
+        r_dim = 4 # dimension of rotation -> 4 = quaternion
         num_pose = self.num_parts * 4 # why 4?
         self.num_pose = num_pose
 

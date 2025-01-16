@@ -81,7 +81,10 @@ models
 
 ## Example
 
-After installing the *VAREN* package and downloading the model parameters you should be able to run the `visualise_model.py` script to visualise the results. For this step you hve to install the [trimesh](https://trimsh.org/) packages.
+After installing the *VAREN* package and downloading the model parameters you should be able to run the `visualise_model.py` script to visualise the results. For this step you hve to install the [trimesh](https://trimsh.org/) package (installed directly via `pip install -e .[all]`. Will need to install separately if installed directly from this repository).
+
+
+
 
 ## Citation
 
