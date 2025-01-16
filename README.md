@@ -44,11 +44,6 @@ VAREN is defined by a function M(θ, β), where θ is the pose parameters, β th
 ## Installation
 
 To install the model please follow the next steps in the specified order:
-Install directly from github: 
-```Shell
-pip install git+https://github.com/TheDepe/VAREN
-```
-or
 
 Clone this repository and install it using the *setup.py* script: 
 ```Shell
@@ -56,6 +51,17 @@ git clone https://github.com/TheDepe/VAREN
 cd VAREN
 pip install -e .[all] 
 ```
+
+or 
+
+Install directly from github: 
+```Shell
+pip install git+https://github.com/TheDepe/VAREN
+```
+
+Note: pip install varen not yet available
+
+
 
 ## Downloading the model
 
