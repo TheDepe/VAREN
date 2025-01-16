@@ -413,7 +413,7 @@ class VAREN(HSMAL):
     NUM_JOINTS = 37
     def __init__(self, model_path: str,
         data_struct: Optional[Struct] = None,
-        use_muscle_deformations: bool = False,
+        use_muscle_deformations: bool = True,
         shape_betas_for_muscles: int = 2,
         muscle_betas_size: int = 1,
         dtype=torch.float32,

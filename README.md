@@ -93,6 +93,31 @@ Optionally, you can save the meshes as follows:
 python examples/visualise_model.py --model_path /path/to/downloaded/models --output_path /path/to/save/meshes --save_meshes
 ```
 
+## Using the model
+
+Usage of the model is similar to that of [smplx](https://github.com/vchoutas/smplx/). VAREN (or HSMAL/SMAL) can be intialised as follows:
+```
+varen = VAREN(model_path)
+``` 
+or optionally as (neural muscle deformations not used):
+```
+varen = VAREN(model_path, use_muscle_deformations=False)
+```
+
+A forward pass can be called simply by (with or without arguments):
+```
+output = varen(body_pose=pose, betas=shape)
+```
+
+Output elements can be accessed via (e.g):
+```
+output.vertices
+output.global_orient
+output.body_pose
+output.body_betas
+output.muscle_betas
+```
+
 
 ## Citation
 
