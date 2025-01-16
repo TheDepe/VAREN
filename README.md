@@ -1,0 +1,83 @@
+# VAREN: Very Accurate and Realistic Equine Network
+
+[ [Project Page](https://varen.is.tue.mpg.de/) ][ [Paper](https://openaccess.thecvf.com/content/CVPR2024/papers/Zuffi_VAREN_Very_Accurate_and_Realistic_Equine_Network_CVPR_2024_paper.pdf) ][ [Training Code](https://github.com/silviazuffi/varen) ]
+
+<img src="images/horse_mesh_overlay.png" alt="Project Logo" width="300" />
+
+This respository contains a user-friendly, light-weight implementation similar to [SMPLX](https://github.com/vchoutas/smplx/) of VAREN from on the paper: *VAREN: Very Accurate and Realistic Equine Network* by Silvia Zuffi, Ylva Mellbin, Ci Li, Markus Hoeschle, Hedvig Kjellström, Senya Polikovsky, Elin Hernlund, and Michael J. Black, CVPR 2024.
+
+
+For the original code base, including the training methods, please see the [training code](https://github.com/silviazuffi/varen).
+
+---
+
+## Table of Contents
+  * [License](#license)
+  * [Description](#description)
+  * [News](#news)
+  * [Installation](#installation)
+  * [Downloading the model](#downloading-the-model)
+  * [Loading VAREN, HSMAL and SMAL](#loading-VAREN-HSMAL-and-SMAL) 
+    * [SMPL and SMPL+H setup](#smpl-and-smplh-setup)
+    * [Model loading](https://github.com/vchoutas/smplx#model-loading)
+  * [MANO and FLAME correspondences](#mano-and-flame-correspondences) 
+  * [Example](#example)
+  * [Modifying the global pose of the model](#modifying-the-global-pose-of-the-model)
+  * [Citation](#citation)
+  * [Acknowledgments](#acknowledgments)
+  * [Contact](#contact)
+
+## License
+
+Software Copyright License for **non-commercial scientific research purposes**.
+Please read carefully the [terms and conditions](https://github.com/vchoutas/VAREN/blob/master/LICENSE) and any accompanying documentation before you download and/or use the VAREN/HSMAL/SMAL model, data and software, (the "Model & Software"), including 3D meshes, blend weights, blend shapes, textures, software, scripts, and animations. By downloading and/or using the Model & Software (including downloading, cloning, installing, and any other use of this github repository), you acknowledge that you have read these terms and conditions, understand them, and agree to be bound by them. If you do not agree with these terms and conditions, you must not download and/or use the Model & Software. Any infringement of the terms of this agreement will automatically terminate your rights under this [License](./LICENSE).
+
+
+## Description
+
+*VAREN* is a equine body model with shape parameters trained on real horses. *VAREN* uses standard vertex based linear blend skinning with learned corrective blend
+shapes, has N = 13,873 vertices and K = 38 joints,
+which include joints for the neck, jaw, ears and tail and hooves. 
+VAREN is defined by a function M(θ, β), where θ is the pose parameters, β the shape parameters.
+
+## News
+
+- 16 January 2025: This repo goes live.
+
+## Installation
+
+To install the model please follow the next steps in the specified order:
+Install directly from github: 
+```Shell
+pip install git+https://github.com/TheDepe/VAREN
+```
+or
+
+Clone this repository and install it using the *setup.py* script: 
+```Shell
+git clone https://github.com/TheDepe/VAREN
+cd VAREN
+pip install -e .[all] 
+```
+
+## Downloading the model
+
+To download the *VAREN* model go to [this project website](https://varen.is.tue.mpg.de/) and register to get access to the downloads section. 
+
+To download the *HSMAL*: To be made available. 
+
+To download the *SMAL* model go to [this](https://smal.is.tue.mpg.de/) (general quadruped model) and register to get access to the downloads section. 
+
+
+## Model loading
+```
+models
+├── varen
+│   ├── VAREN.pkl
+│   └── varen_muscle_vertex_labels.pkl
+│   └── varen.pth
+├── hsmal
+│   └── HSMAL.pkl
+└── smal
+    └── SMAL.pkl
+```
