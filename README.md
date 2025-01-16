@@ -105,7 +105,7 @@ Usage of the model is similar to that of [smplx](https://github.com/vchoutas/smp
 ```
 varen = VAREN(model_path)
 ``` 
-or optionally as (neural muscle deformations not used):
+or optionally without neural muscle deformations:
 ```
 varen = VAREN(model_path, use_muscle_deformations=False)
 ```
