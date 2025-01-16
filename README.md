@@ -18,11 +18,8 @@ For the original code base, including the training methods, please see the [trai
   * [Installation](#installation)
   * [Downloading the model](#downloading-the-model)
   * [Loading VAREN, HSMAL and SMAL](#loading-VAREN-HSMAL-and-SMAL) 
-    * [SMPL and SMPL+H setup](#smpl-and-smplh-setup)
-    * [Model loading](https://github.com/vchoutas/smplx#model-loading)
-  * [MANO and FLAME correspondences](#mano-and-flame-correspondences) 
+    * [Model loading](#model-loading)
   * [Example](#example)
-  * [Modifying the global pose of the model](#modifying-the-global-pose-of-the-model)
   * [Citation](#citation)
   * [Acknowledgments](#acknowledgments)
   * [Contact](#contact)
@@ -81,3 +78,28 @@ models
 └── smal
     └── SMAL.pkl
 ```
+
+## Example
+
+After installing the *VAREN* package and downloading the model parameters you should be able to run the `visualise_model.py` script to visualise the results. For this step you hve to install the [trimesh](https://trimsh.org/) packages.
+
+## Citation
+
+If you found the model or any of the pieces of cod euseful in this repo, please cite the paper:
+
+```
+@inproceedings{Zuffi:CVPR:2024,  
+  title = {{VAREN}: Very Accurate and Realistic Equine Network},  
+  author = {Zuffi, Silvia and Mellbin, Ylva and Li, Ci and Hoeschle, Markus and Kjellström, Hedvig and Polikovsky, Senya  and Hernlund, Elin and Black, Michael J.},  
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},  
+  pages = {},
+  month = Jun,
+  year = {2024}
+}
+
+```
+## Contact
+
+The code of this repo was implemented by [Dennis Perrett](dennis.perrett@tuebingen.mpg.de).
+
+For questions on this implementation, please contact [Dennis](dennis.perrett@tuebingen.mpg.de) directly, or for questions on the model and its abstract implementation, please contact [Silvia Zuffi](silvia.zuffi@tuebingen.mpg.de)
