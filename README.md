@@ -82,7 +82,7 @@ models
     └── pred_net_100.pth
 ```
 
-<span color='red'>Important:</> Until we set up the final hosting, you need to alter/combine the various pickle files and checkpoint. Please run:
+<span style="color:red">Important:</span> Until we set up the final hosting, you need to alter/combine the various pickle files and checkpoint. Please run:
 
 ```
 python tools/prepare_model_data.py
