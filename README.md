@@ -6,7 +6,10 @@ This respository contains a user-friendly, light-weight implementation similar t
 
 
 For the original code base, including the training methods, please see the [training code](https://github.com/silviazuffi/varen).
-![Mesh Image](images/horse_mesh_overlay.png)
+| ![Left](images/leftside.png) | ![Front](images/front.png) | ![Right](images/rightside.png) |
+|------------------------------|----------------------------|--------------------------------|
+
+
 Visualisation output from `example/visualise_model.py`. The image depicts two overlapping meshes: base model (grey) and the model with muscle deformations (purple).
 
 ---
