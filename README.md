@@ -10,7 +10,7 @@ For the original code base, including the training methods, please see the [trai
 |------------------------------|----------------------------|--------------------------------|
 
 
-Visualisation output from `example/visualise_model.py`. The image depicts two overlapping meshes: base model (grey) and the model with muscle deformations (purple).
+Visualisation output from `example/visualise_model.py`. The image depicts the VAREN model in neutral pose, with colours reflecting the face normals.
 
 ---
 
