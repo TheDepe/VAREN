@@ -21,7 +21,6 @@ Visualisation output from `example/visualise_model.py`. The image depicts two ov
     * [Model loading](#model-loading)
   * [Example](#example)
   * [Citation](#citation)
-  * [Acknowledgments](#acknowledgments)
   * [Contact](#contact)
 
 ## License
