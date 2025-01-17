@@ -6,7 +6,7 @@ This respository contains a user-friendly, light-weight implementation similar t
 
 
 For the original code base, including the training methods, please see the [training code](https://github.com/silviazuffi/varen).
-| ![Left](images/leftside.png) | ![Front](images/front.png) | ![Right](images/rightside.png) |
+| ![Left](images/rightside.png) | ![Front](images/front.png) | ![Right](images/leftside.png) |
 |------------------------------|----------------------------|--------------------------------|
 
 
