@@ -11,6 +11,9 @@ Visualisation output from `example/visualise_model.py`. The image depicts two ov
 
 ---
 
+## TO DOS:
+- Extend/ the Vertex Selector for each model. Currently missing are the Hooves.  
+
 ## Table of Contents
   * [License](#license)
   * [Description](#description)
