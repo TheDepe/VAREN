@@ -22,7 +22,7 @@ from setuptools import setup
 
 # Package meta-data.
 NAME = 'varen'
-DESCRIPTION = 'PyTorch module for loading the SMPLX body model'
+DESCRIPTION = 'PyTorch module for loading the VAREN body model'
 URL = 'http://smpl-x.is.tuebingen.mpg.de'
 EMAIL = 'dennis.perrett@tuebingen.mpg.de'
 AUTHOR = 'Dennis Perrett'
