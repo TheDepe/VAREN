@@ -17,6 +17,7 @@ Visualisation output from `example/visualise_model.py`. The image depicts the VA
 ## TO DOS:
 - [ ] Extend/ the Vertex Selector for each model. Currently missing are the Hooves.  
 - [ ] Remove Chumpy dependency (not only needed for reading the current file formats)
+- [ ] Add more documentation
 
 ## Table of Contents
   * [License](#license)
