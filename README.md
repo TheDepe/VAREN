@@ -54,7 +54,7 @@ To install the model please follow the next steps in the specified order:
 
 Clone this repository and install it using the *setup.py* script: 
 ```Shell
-git clone https://github.com/TheDepe/VAREN
+git clone https://github.com/TheDepe/VAREN.git
 cd VAREN
 pip install -e .[all] 
 ```
@@ -63,7 +63,7 @@ or
 
 Install directly from github: 
 ```Shell
-pip install git+https://github.com/TheDepe/VAREN
+pip install git+https://github.com/TheDepe/VAREN.git
 ```
 
 Note: pip install varen not yet available
