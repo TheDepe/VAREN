@@ -629,7 +629,7 @@ class VAREN(HSMAL):
 
 
     @property
-    def keypoints_information(self):
+    def keypoint_information(self):
         """
         Returns name of Keypoint along with vertex index.
         """
