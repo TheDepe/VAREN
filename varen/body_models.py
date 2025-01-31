@@ -467,8 +467,9 @@ class VAREN(HSMAL):
         if hasattr(data_struct, 'seg'):
             self.seg = data_struct.seg
 
-        self.vertex_joint_selector = VertexJointSelector(
-            vertex_ids=vertex_ids, use_hands=False, use_feet_keypoints=False, **kwargs)
+        self.vertex_joint_selector.extra_joints_idxs = to_tensor(
+            list(VERTEX_IDS['varen'].values()), dtype=torch.long)
+        
         
         if self.use_muscle_deformations:
             muscle_labels_path = osp.join(model_path, muscle_labels_filename)
