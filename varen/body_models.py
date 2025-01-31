@@ -628,6 +628,13 @@ class VAREN(HSMAL):
         self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Should pull what it needs
 
 
+    @property
+    def keypoints_information(self):
+        """
+        Returns name of Keypoint along with vertex index.
+        """
+        return VERTEX_IDS['varen']
+
 # Get this part working. Figure out the opts and stuff.
 # Probably put the rest of the arguments from opts in the kwargs on VAREN and define them here. Just upack the kwargs on call
 class BetasMusclePredictor(nn.Module):
