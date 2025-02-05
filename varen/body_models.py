@@ -529,11 +529,14 @@ class VAREN(HSMAL):
         if apply_trans:
             joints += transl.unsqueeze(dim=1)
             vertices += transl.unsqueeze(dim=1)
-            
+        
+        # Separate joints from surface keypoints
+        
         output = VARENOutput(vertices=vertices if return_verts else None,
                         global_orient=global_orient,
                         body_pose=body_pose,
-                        joints=joints,
+                        joints=joints[:,:self.NUM_JOINTS],
+                        surface_keypoints=joints[:,self.NUM_JOINTS:],
                         body_betas=betas,
                         muscle_betas=betas_muscle if self.use_muscle_deformations else None,
                         full_pose=full_pose if return_full_pose else None)
