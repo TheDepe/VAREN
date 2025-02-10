@@ -411,8 +411,10 @@ class HSMAL(SMAL):
 class VAREN(HSMAL):
     "NOT SURE ITS CORRECT TO INHERIT FROM HSMAL"
     NUM_JOINTS = 37
+    SHAPE_SPACE_DIM = 39
     def __init__(self, model_path: str,
         data_struct: Optional[Struct] = None,
+        num_betas: int = 39,
         use_muscle_deformations: bool = True,
         shape_betas_for_muscles: int = 2,
         muscle_betas_size: int = 1,
@@ -453,6 +455,25 @@ class VAREN(HSMAL):
             batch_size=batch_size, dtype=dtype, vertex_ids=vertex_ids,
             ext=ext, high_res=True, **kwargs)       
         
+        self.batch_size = batch_size
+        shapedirs = data_struct.shapedirs
+        if (shapedirs.shape[-1] < self.SHAPE_SPACE_DIM):
+            print(f'WARNING: You are using a {self.name()} model, with only'
+                  f' {shapedirs.shape[-1]} shape coefficients.\n'
+                  f'num_betas={num_betas}, shapedirs.shape={shapedirs.shape}, '
+                  f'self.SHAPE_SPACE_DIM={self.SHAPE_SPACE_DIM}')
+            num_betas = min(num_betas, shapedirs.shape[-1])
+        else:
+            num_betas = min(num_betas, self.SHAPE_SPACE_DIM)
+
+
+        self._num_betas = num_betas
+        shapedirs = shapedirs[:, :, :num_betas]
+        # The shape components
+        self.register_buffer(
+            'shapedirs',
+            to_tensor(to_np(shapedirs), dtype=dtype))
+
         # Add additional information about the part segmentation
         if hasattr(data_struct, 'parts'): 
             self.parts = data_struct.parts
