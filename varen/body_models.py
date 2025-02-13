@@ -561,7 +561,7 @@ class VAREN(HSMAL):
                         body_betas=betas,
                         muscle_betas=betas_muscle if self.use_muscle_deformations else None,
                         full_pose=full_pose if return_full_pose else None,
-                        muscle_acitivations=A if self.use_muscle_deformations else None,
+                        muscle_activations=A if self.use_muscle_deformations else None,
                         mdv=mdv if self.use_muscle_deformations else None)
         return output
 
