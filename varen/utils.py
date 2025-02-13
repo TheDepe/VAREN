@@ -66,13 +66,13 @@ class SMALOutput(ModelOutput):
     body_pose: Optional[Tensor] = None
 
 @dataclass
-@dataclass
 class VARENOutput(ModelOutput):
     mdv: Optional[Tensor] = None
     surface_keypoints: Optional[Tensor] = None,
     body_pose: Optional[Tensor] = None
     body_betas: Optional[Tensor] = None
     muscle_betas: Optional[Tensor] = None
+    muscle_activations: Optional[Tensor] = None
 
 def find_joint_kin_chain(joint_id, kinematic_tree):
     kin_chain = []

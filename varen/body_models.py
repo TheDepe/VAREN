@@ -410,7 +410,7 @@ class HSMAL(SMAL):
 
 class VAREN(HSMAL):
     "NOT SURE ITS CORRECT TO INHERIT FROM HSMAL"
-    NUM_JOINTS = 37
+    NUM_JOINTS = 37 # results in 38 joints including 0
     SHAPE_SPACE_DIM = 39
     def __init__(self, model_path: str,
         data_struct: Optional[Struct] = None,
@@ -560,7 +560,9 @@ class VAREN(HSMAL):
                         surface_keypoints=joints[:,self.NUM_JOINTS:],
                         body_betas=betas,
                         muscle_betas=betas_muscle if self.use_muscle_deformations else None,
-                        full_pose=full_pose if return_full_pose else None)
+                        full_pose=full_pose if return_full_pose else None,
+                        muscle_acitivations=A if self.use_muscle_deformations else None,
+                        mdv=mdv if self.use_muscle_deformations else None)
         return output
 
     def define_muscle_deformations_variables(self, muscle_labels_path=None):
@@ -702,7 +704,6 @@ class BetasMusclePredictor(nn.Module):
         if self.shape_betas_for_muscles > 0:
             tensor_b = torch.cat((tensor_b, betas[:,:self.shape_betas_for_muscles]),dim=1)
 
-        A = self.A
         tensor_a = self.A*self.muscledef.weight
 
         
@@ -712,4 +713,4 @@ class BetasMusclePredictor(nn.Module):
         tensor_b = tensor_b.expand(-1,self.num_muscle,-1)
         betas_muscle = tensor_a * tensor_b
 
-        return betas_muscle, A*self.muscledef.weight
+        return betas_muscle, self.A*self.muscledef.weight
