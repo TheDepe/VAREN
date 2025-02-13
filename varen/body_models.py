@@ -426,6 +426,7 @@ class VAREN(HSMAL):
         ext: str ='pkl',
         model_file_name: Optional[str] = None,
         muscle_labels_filename: Optional[str] = "varen_muscle_vertex_labels.npy",
+        ckpt_file: Optional[str] = None, # Defaults to varen.py later
         **kwargs) -> None:
 
         self.use_muscle_deformations = use_muscle_deformations
@@ -493,13 +494,30 @@ class VAREN(HSMAL):
         
         
         if self.use_muscle_deformations:
-            muscle_labels_path = osp.join(model_path, muscle_labels_filename)
-            # here
-            ckpt_path = osp.join(model_path,'varen.pth')
-            self.load_VAREN_muscle_model(checkpoint_path=ckpt_path, muscle_labels_path=muscle_labels_path)
+            # Create Neural Muscle Deformations
+            self.create_neural_muscle_deformer(model_path=model_path, muscle_labels_filename=muscle_labels_filename)
+            
+            # If path exists, load
+            if ckpt_file == 'varen.pth':
+                ckpt_path = osp.join(model_path, ckpt_file)
+            else:
+                ckpt_path = ckpt_file
+            
+            if ckpt_path is not None:
+                print("Loading model from: ", ckpt_path)
+                chkpt = torch.load(ckpt_path, weights_only=True)
+                self.Bm.load_state_dict(chkpt['Bm']) # Should pull what it needs
+                self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Should pull what it needs
             
         # I think thats all for 
 
+    def create_neural_muscle_deformer(self, model_path, muscle_labels_filename):
+        muscle_labels_path = osp.join(model_path, muscle_labels_filename)
+        A = self.define_muscle_deformations_variables(muscle_labels_path=muscle_labels_path)
+        self.betas_muscle_predictor =  BetasMusclePredictor(
+            muscle_associations = A,
+            shape_beta_for_muscles = self.shape_betas_for_muscles
+            )
 
     def forward(self, 
                 betas: Optional[Tensor] = None,
@@ -641,19 +659,6 @@ class VAREN(HSMAL):
 
         return muscle_associations
     
-
-    def load_VAREN_muscle_model(self, checkpoint_path, muscle_labels_path):
-        A = self.define_muscle_deformations_variables(muscle_labels_path=muscle_labels_path)
-        self.betas_muscle_predictor = BetasMusclePredictor(
-            muscle_associations = A,
-            shape_beta_for_muscles = self.shape_betas_for_muscles
-            )
-        print("Loading model from: ", checkpoint_path)
-        chkpt = torch.load(checkpoint_path, weights_only=True)
-        self.Bm.load_state_dict(chkpt['Bm']) # Should pull what it needs
-        self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Should pull what it needs
-
-
     @property
     def keypoint_information(self):
         """
