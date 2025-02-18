@@ -409,25 +409,72 @@ class HSMAL(SMAL):
 
 
 class VAREN(HSMAL):
-    "NOT SURE ITS CORRECT TO INHERIT FROM HSMAL"
-    NUM_JOINTS = 37 # results in 38 joints including 0
-    SHAPE_SPACE_DIM = 39
+    """
+    VAREN (Very Accurate and Realistic Equine Network) class that extends the `HSMAL` class.
+    
+    This model is designed for equine (horse) body shape and pose estimation. It utilizes a similar approach to SMPL,
+    but is specifically tailored for horses. The model includes the ability to simulate muscle deformations using a neural 
+    network, making it suitable for accurate and realistic representations of equine structures and movements.
+    
+    Args:
+        model_path (str): Path to the model directory or file.
+        data_struct (Optional[Struct], optional): The data structure containing model information (default is None).
+        num_betas (int, optional): The number of shape coefficients to use for the model (default is 39).
+        use_muscle_deformations (bool, optional): Whether to include muscle deformations (default is True).
+        shape_betas_for_muscles (int, optional): Number of shape betas for muscle modeling (default is 2).
+        muscle_betas_size (int, optional): The size of muscle betas (default is 1).
+        dtype (torch.dtype, optional): The data type of tensors (default is torch.float32).
+        batch_size (int, optional): The batch size for the model (default is 1).
+        joint_mapper (Optional[callable], optional): A function to map joints (default is None).
+        vertex_ids (Optional[Dict[str, int]], optional): A dictionary of vertex IDs for different parts of the horse's body (default is None).
+        v_template (Optional[Union[Tensor, Array]], optional): Template vertex data for the model (default is None).
+        ext (str, optional): File extension for the model data (default is 'pkl').
+        model_file_name (Optional[str], optional): The file name for the model (default is None).
+        muscle_labels_filename (Optional[str], optional): Filename for muscle vertex labels (default is "varen_muscle_vertex_labels.npy").
+        ckpt_file (Optional[str], optional): Path to a checkpoint file for loading the model (default is None).
+        **kwargs: Additional arguments passed to the parent class initialization.
+    """
+
+    NUM_JOINTS = 37 # Results in 38 joints including 0 (for equine body structure)
+    SHAPE_SPACE_DIM = 39 # The dimensionality of the shape space for the model
     def __init__(self, model_path: str,
-        data_struct: Optional[Struct] = None,
-        num_betas: int = 39,
-        use_muscle_deformations: bool = True,
-        shape_betas_for_muscles: int = 2,
-        muscle_betas_size: int = 1,
-        dtype=torch.float32,
-        batch_size: int = 1,
-        joint_mapper=None,
-        vertex_ids: Dict[str, int] = None,
-        v_template: Optional[Union[Tensor, Array]] = None,
-        ext: str ='pkl',
-        model_file_name: Optional[str] = None,
-        muscle_labels_filename: Optional[str] = "varen_muscle_vertex_labels.npy",
-        ckpt_file: Optional[str] = None, # Defaults to varen.py later
-        **kwargs) -> None:
+                 data_struct: Optional[Struct] = None,
+                 num_betas: int = 39,
+                 use_muscle_deformations: bool = True,
+                 shape_betas_for_muscles: int = 2,
+                 muscle_betas_size: int = 1,
+                 dtype=torch.float32,
+                 batch_size: int = 1,
+                 joint_mapper=None,
+                 vertex_ids: Dict[str, int] = None,
+                 v_template: Optional[Union[Tensor, Array]] = None,
+                 ext: str ='pkl',
+                 model_file_name: Optional[str] = None,
+                 muscle_labels_filename: Optional[str] = "varen_muscle_vertex_labels.npy",
+                 ckpt_file: Optional[str] = None,
+                 **kwargs) -> None:
+        """
+        Initializes the VAREN model, which is a highly accurate and realistic model for equine body shape and pose 
+        estimation with optional muscle deformation simulation.
+        
+        Args:
+            model_path (str): The path to the directory containing the model data or the model file.
+            data_struct (Optional[Struct], optional): Data structure containing model details (default is None).
+            num_betas (int, optional): Number of shape coefficients for the model (default is 39).
+            use_muscle_deformations (bool, optional): Whether to use muscle deformations (default is True).
+            shape_betas_for_muscles (int, optional): Number of shape betas for muscle modeling (default is 2).
+            muscle_betas_size (int, optional): The size of muscle betas (default is 1).
+            dtype (torch.dtype, optional): Data type for the model tensors (default is torch.float32).
+            batch_size (int, optional): Batch size (default is 1).
+            joint_mapper (Optional[callable], optional): A mapping function for joints (default is None).
+            vertex_ids (Optional[Dict[str, int]], optional): Dictionary mapping body parts to vertex IDs (default is None).
+            v_template (Optional[Union[Tensor, Array]], optional): Template vertices (default is None).
+            ext (str, optional): File extension for the model (default is 'pkl').
+            model_file_name (Optional[str], optional): The specific model filename (default is None).
+            muscle_labels_filename (Optional[str], optional): Filename for muscle vertex labels (default is "varen_muscle_vertex_labels.npy").
+            ckpt_file (Optional[str], optional): Path to the checkpoint file for model loading (default is None).
+            **kwargs: Additional arguments passed to the parent class `HSMAL` initialization.
+        """
 
         self.use_muscle_deformations = use_muscle_deformations
         self.shape_betas_for_muscles = shape_betas_for_muscles
@@ -509,9 +556,17 @@ class VAREN(HSMAL):
                 self.Bm.load_state_dict(chkpt['Bm']) # Should pull what it needs
                 self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Should pull what it needs
             
-        # I think thats all for 
 
-    def create_neural_muscle_deformer(self, model_path, muscle_labels_filename):
+    def create_neural_muscle_deformer(self, model_path: str, muscle_labels_filename: str) -> None:
+        """
+        Creates and initializes the neural muscle deformation model using muscle labels and associations.
+        
+        This method defines the muscle deformations based on the muscle labels and shape betas for muscles.
+        
+        Args:
+            model_path (str): The path to the model directory.
+            muscle_labels_filename (str): The filename of the muscle vertex labels.
+        """
         muscle_labels_path = osp.join(model_path, muscle_labels_filename)
         A = self.define_muscle_deformations_variables(muscle_labels_path=muscle_labels_path)
         self.betas_muscle_predictor =  BetasMusclePredictor(
@@ -527,7 +582,23 @@ class VAREN(HSMAL):
                 return_verts: bool = True, 
                 return_full_pose: bool = False, 
                 pose2rot: bool = True,
-                **kwargs):
+                **kwargs) -> VARENOutput:
+        """
+        Forward pass for the VAREN model. Computes the body shape, pose, and optional muscle deformations for the horse model.
+
+        Args:
+            betas (Optional[Tensor], optional): Shape coefficients for the body model (default is None).
+            body_pose (Optional[Tensor], optional): Body pose parameters (default is None).
+            global_orient (Optional[Tensor], optional): Global orientation parameters (default is None).
+            transl (Optional[Tensor], optional): Translation parameters (default is None).
+            return_verts (bool, optional): Whether to return the vertices of the model (default is True).
+            return_full_pose (bool, optional): Whether to return the full pose including global orientation (default is False).
+            pose2rot (bool, optional): Whether to convert pose parameters to rotation matrices (default is True).
+            **kwargs: Additional arguments passed to the method.
+
+        Returns:
+            VARENOutput: The output of the forward pass, including the computed body shape, pose, vertices, muscle activations, etc.
+        """
         
         global_orient = (global_orient if global_orient is not None else
                          self.global_orient)
@@ -548,7 +619,7 @@ class VAREN(HSMAL):
             # A set of decoders, one for each muscle
 
             betas_muscle, A = self.betas_muscle_predictor.forward(full_pose, betas) # correct.
-
+            # This is just a data class. 
             muscle_deformer = MuscleDeformer(betas_muscle, self.Bm, self.muscle_idxs)
         else:
             muscle_deformer = None
@@ -583,12 +654,17 @@ class VAREN(HSMAL):
                         mdv=mdv if self.use_muscle_deformations else None)
         return output
 
-    def define_muscle_deformations_variables(self, muscle_labels_path=None):
-        '''
-        '''
+    def define_muscle_deformations_variables(self, muscle_labels_path: Optional[str] = None) -> torch.Tensor:
+        """
+        Defines the muscle deformation variables, including muscle associations and muscle vertex indices.
 
+        Args:
+            muscle_labels_path (Optional[str], optional): Path to the muscle labels (default is None).
 
-
+        Returns:
+            torch.Tensor: A tensor representing muscle associations for the horse model.
+        """
+        
         self.muscle_labels = np.load(open(muscle_labels_path, 'rb'))
 
         self.num_muscles = np.max(self.muscle_labels) + 1
@@ -660,16 +736,21 @@ class VAREN(HSMAL):
         return muscle_associations
     
     @property
-    def keypoint_information(self):
+    def keypoint_information(self) -> Dict[str, int]:
         """
-        Returns name of Keypoint along with vertex index.
+        Returns a dictionary containing the name of each keypoint along with the corresponding vertex index.
+        
+        This includes keypoints for various parts of the horse's body.
+
+        Returns:
+            Dict[str, int]: Dictionary mapping keypoint names to their corresponding vertex indices.
         """
         return VERTEX_IDS['varen']
 
 # Get this part working. Figure out the opts and stuff.
 # Probably put the rest of the arguments from opts in the kwargs on VAREN and define them here. Just upack the kwargs on call
 class BetasMusclePredictor(nn.Module):
-    def __init__(self, muscle_associations, shape_beta_for_muscles, debug=False):
+    def __init__(self, muscle_associations, shape_beta_for_muscles, debug=False, dtype=torch.float32):
         super(BetasMusclePredictor, self).__init__()
         #self.opts = opts
 
@@ -682,9 +763,9 @@ class BetasMusclePredictor(nn.Module):
         
 
         self.muscledef = nn.Linear(self.num_pose + self.shape_betas_for_muscles, self.num_muscle, bias=False)
-        torch.nn.init.normal_(self.muscledef.weight, mean=0.0, std=0.001)
+        torch.nn.init.normal_(self.muscledef.weight, mean=0.0, std=0.001).to(dtype)
         
-        A_here = torch.zeros(self.num_muscle, self.num_pose)
+        A_here = torch.zeros(self.num_muscle, self.num_pose).to(dtype)
         if debug:
             np.save('A_init.npy', muscle_associations.detach().cpu().numpy())
 
@@ -702,7 +783,7 @@ class BetasMusclePredictor(nn.Module):
         if self.shape_betas_for_muscles > 0:
             A_here[:,self.num_pose:] = 1
 
-        self.A = torch.nn.Parameter(A_here, requires_grad=True) # We learn this. Why do we copy it?
+        self.A = torch.nn.Parameter(A_here, requires_grad=True).to(dtype) # We learn this. Why do we copy it?
 
     def forward(self, pose, betas):
         tensor_b = axis_angle_to_quaternion(pose[:,3:].view(-1,self.num_parts,3)).view(-1,self.num_parts*4)

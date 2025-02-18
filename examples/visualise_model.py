@@ -4,7 +4,7 @@ import trimesh
 import argparse
 import numpy as np
 
-from varen import SMAL, HSMAL, VAREN
+from varen import VAREN
 
 
 def main():
@@ -33,8 +33,8 @@ def main():
     varen_ext = VAREN(model_path, use_muscle_deformations=True)
     NUM_JOINTS = varen_ext.NUM_JOINTS
 
-    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3*0
-    shape = torch.rand(1, 10) 
+    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
+    shape = torch.rand(1, 39) 
 
 
     # Process extended model
@@ -46,16 +46,18 @@ def main():
     mesh_ext = trimesh.Trimesh(vertices_ext, faces_ext)
     joints_pcd_ext = trimesh.points.PointCloud(joints_ext, size=0.01)
     #mesh_ext.visual.face_colors[:] = np.array([138, 42, 173, 150]) # purple
+    
     normals = (mesh_ext.face_normals + 1) / 2 
     colours = (normals * 255).astype(np.uint8)
     colours = np.hstack((colours, np.full((colours.shape[0], 1), 200)))
     #colors = trimesh.visual.interpolate(values=mesh_ext.face_normals, color_map='viridis')
+    
     mesh_ext.visual.face_colors = colours
     joints_pcd_ext.colors = np.array([0, 0, 0, 255])
 
     # Create and show scene
     scene = trimesh.Scene([mesh_ext, joints_pcd_ext])
-    scene.show()
+    #scene.show()
 
     # Export meshes to files
     if args.save_meshes:

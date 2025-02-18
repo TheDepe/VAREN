@@ -52,8 +52,9 @@ if not VERSION:
 else:
     about['__version__'] = VERSION
 
-trimesh_reqs = ['trimesh>=2.37.6', 'pyglet<2.0']
-
+trimesh_installs = ['trimesh>=2.37.6', 'pyglet<2.0',]
+backwards_compatability = ['chumpy @ git+https://github.com/mattloper/chumpy.git']
+all_installs = trimesh_installs + backwards_compatability
 setup(name=NAME,
       version=about['__version__'],
       description=DESCRIPTION,
@@ -66,11 +67,10 @@ setup(name=NAME,
       install_requires=[
           'numpy>=1.16.2',
           'torch>=1.0.1.post2',
-          'scipy>=1.0.0',
-          'chumpy @ git+https://github.com/mattloper/chumpy.git'
+          'scipy>=1.0.0'
       ],
       extras_require={
-          'trimesh': trimesh_reqs,
-          'all': trimesh_reqs
+          'trimesh': trimesh_installs,
+          'all': all_installs
       },
       packages=['varen'])
