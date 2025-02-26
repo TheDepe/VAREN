@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "varen"
+version = "0.0.1"
+description = "PyTorch module for loading the VAREN body model"
+authors = [
+    { name = "Dennis Perrett", email = "dennis.perrett@tuebingen.mpg.de" },
+    { name = "Silvia Zuffi"}
+]
+readme = "README.md"
+requires-python = ">=3.6.0"
+license = { text = "Proprietary" }
+homepage = "https://varen.is.tue.mpg.de/"
+dependencies = [
+    "numpy>=1.16.2",
+    "torch>=1.0.1.post2",
+    "scipy>=1.0.0"
+]
+
+[project.optional-dependencies]
+trimesh = ["trimesh>=2.37.6", "pyglet<2.0"]
+all = ["trimesh>=2.37.6", "pyglet<2.0"]
+
+[tool.setuptools]
+packages = ["varen"]
