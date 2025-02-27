@@ -50,81 +50,66 @@ VAREN is defined by a function M(θ, β), where θ is the pose parameters, β th
 
 ## Installation
 
-To install the model please follow the next steps in the specified order:
+You have two options for installing the model:
+1. Just interested in embedding the model in your codebase/method
+2. Installing this exact repo with tools and visualisations etc
 
-Clone this repository and install it using the *setup.py* script: 
+Most people will be interested only in option 1.
+
+### Installing the model only
+
+The easiest way to install the model, is via pip:
+
+```Shell
+pip install varen
+```
+
+
+Note: Minor updates will be published here on github first:
+pip install git+https://github.com/TheDepe/VAREN.git
+
+
+
+
+### Installing the model along with this repo
+This repository provides some basic scripts and tools to get an idea of how to use VAREN. To install the model please follow the next steps in the specified order:
+
+Clone this repository and install it using the *pyproject.toml* backend: 
 ```Shell
 git clone https://github.com/TheDepe/VAREN.git
 cd VAREN
 pip install -e .[all] 
 ```
 
-or 
-
-Install directly from github: 
-```Shell
-pip install git+https://github.com/TheDepe/VAREN.git
-```
-
-Note: pip install varen not yet available
-
-
 
 ## Downloading the model
 
 To download the *VAREN* model:
 Go to [this project website](https://varen.is.tue.mpg.de/) and register to get access to the downloads section. 
-- Download the `Horse Smal Model` Pickle file.
-- Download the Checkpoint `pred_net_100.pth` file.
+- Download the `VAREN.pkl` Pickle file.
+- Download the Checkpoint `varen.pth` file.
 
-For the time being, download these additional files. 
-- Download the [vertex labels file](https://raw.githubusercontent.com/silviazuffi/varen/master/varen/model/varen_muscle_vertex_labels.npy)
-- Download the [varen segment data](https://raw.githubusercontent.com/silviazuffi/varen/master/varen/model/varen_smal_real_horse_seg_data.pkl)
 
-Place each of these in a directory as follows:
-```
-models
-└── varen
-    ├── varen_smal_real_horse.pkl
-    └── varen_muscle_vertex_labels.pkl
-    └── pred_net_100.pth
-```
-
-**<span style="color:red">Important:</span>** Until we set up the final hosting, you need to alter/combine the various pickle files and checkpoint. Please run:
+Place each of these in a directory as follows. Note, you must specify the path to the when loading the model:
 
 ```
-python tools/prepare_model_data.py
+varen
+   └── VAREN.pkl
+   └── varen.pth
 ```
-After this step, most original files are no longer required. Feel free to run:
-```
-python tools/cleanup_model_dir.py --delete 
-```
-or optionally, to move the original files into varen/.original_data:
-```
-python tools/cleanup_model_dir.py 
-```
-
-To download the *HSMAL*: To be made available. 
-
-To download the *SMAL* model go to [this](https://smal.is.tue.mpg.de/) (general quadruped model) and register to get access to the downloads section. 
-
 
 
 
 ## Model loading
-Final model structure should look something like this. 
+When loading the model, you must specify the path to the directory containing these models eg:
 
 ```
-models
-├── varen
-│   ├── VAREN.pkl
-│   └── varen_muscle_vertex_labels.pkl
-│   └── varen.pth
-├── hsmal
-│   └── HSMAL.pkl
-└── smal
-    └── SMAL.pkl
+from varen import VAREN
+varen = VAREN("/a/b/c/varen")
 ```
+
+The model will load the necessary files itself. 
+
 
 ## Example
 
