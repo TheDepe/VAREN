@@ -286,7 +286,7 @@ class SMAL(nn.Module):
         pose2rot: bool = True,
         **kwargs
     ) -> SMALOutput:
-        ''' Forward pass for the SMPL model
+        ''' Forward pass for the SMAL model
 
             Parameters
             ----------

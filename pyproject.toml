@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "varen"
-version = "1.0.2"
+version = "1.0.3"
 description = "PyTorch module for loading the VAREN body model"
 authors = [
     { name = "Dennis Perrett", email = "dennis.perrett@tuebingen.mpg.de" },
