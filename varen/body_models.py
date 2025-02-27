@@ -430,7 +430,6 @@ class VAREN(HSMAL):
         v_template (Optional[Union[Tensor, Array]], optional): Template vertex data for the model (default is None).
         ext (str, optional): File extension for the model data (default is 'pkl').
         model_file_name (Optional[str], optional): The file name for the model (default is None).
-        muscle_labels_filename (Optional[str], optional): Filename for muscle vertex labels (default is "varen_muscle_vertex_labels.npy").
         ckpt_file (Optional[str], optional): Path to a checkpoint file for loading the model (default is None).
         **kwargs: Additional arguments passed to the parent class initialization.
     """
@@ -450,7 +449,6 @@ class VAREN(HSMAL):
                  v_template: Optional[Union[Tensor, Array]] = None,
                  ext: str ='pkl',
                  model_file_name: Optional[str] = None,
-                 muscle_labels_filename: Optional[str] = "varen_muscle_vertex_labels.npy",
                  ckpt_file: Optional[str] = 'varen.pth',
                  **kwargs) -> None:
         """
@@ -470,8 +468,7 @@ class VAREN(HSMAL):
             vertex_ids (Optional[Dict[str, int]], optional): Dictionary mapping body parts to vertex IDs (default is None).
             v_template (Optional[Union[Tensor, Array]], optional): Template vertices (default is None).
             ext (str, optional): File extension for the model (default is 'pkl').
-            model_file_name (Optional[str], optional): The specific model filename (default is None).
-            muscle_labels_filename (Optional[str], optional): Filename for muscle vertex labels (default is "varen_muscle_vertex_labels.npy").
+            model file_name (Optional[str], optional): The specific model filename (default is None).
             ckpt_file (Optional[str], optional): Path to the checkpoint file for model loading (default is None).
             **kwargs: Additional arguments passed to the parent class HSMAL initialization.
         """
@@ -540,13 +537,16 @@ class VAREN(HSMAL):
         if hasattr(data_struct, 'seg'):
             self.seg = data_struct.seg
 
+        if hasattr(data_struct, 'muscle_labels'):
+            self.muscle_labels = data_struct.muscle_labels
+
         self.vertex_joint_selector.extra_joints_idxs = to_tensor(
             list(VERTEX_IDS['varen'].values()), dtype=torch.long)
         
         
         if self.use_muscle_deformations:
             # Create Neural Muscle Deformations
-            self.create_neural_muscle_deformer(model_path=model_path, muscle_labels_filename=muscle_labels_filename)
+            self.create_neural_muscle_deformer()
             
             # If path exists, load
             if ckpt_file is not None:
@@ -559,7 +559,7 @@ class VAREN(HSMAL):
                 self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Load betas muscle predictor weights
             
 
-    def create_neural_muscle_deformer(self, model_path: str, muscle_labels_filename: str) -> None:
+    def create_neural_muscle_deformer(self) -> None:
         """
         Creates and initializes the neural muscle deformation model using muscle labels and associations.
         
@@ -569,8 +569,8 @@ class VAREN(HSMAL):
             model_path (str): The path to the model directory.
             muscle_labels_filename (str): The filename of the muscle vertex labels.
         """
-        muscle_labels_path = osp.join(model_path, muscle_labels_filename)
-        muscle_associations = self.define_muscle_deformations_variables(muscle_labels_path=muscle_labels_path)
+
+        muscle_associations = self.define_muscle_deformations_variables()
 
         # Predict Muscle Betas based on pose and shape
         self.betas_muscle_predictor = MuscleBetaPredictor(
@@ -649,7 +649,7 @@ class VAREN(HSMAL):
         # Muscle Deformer is a just a Dataclass containing the outputs of MuscleBetasPredictor
         return MuscleDeformer(muscle_betas, self.Bm, self.muscle_vertex_map) 
 
-    def define_muscle_deformations_variables(self, muscle_labels_path: Optional[str] = None) -> torch.Tensor:
+    def define_muscle_deformations_variables(self) -> torch.Tensor:
         """
         Defines muscle deformation variables, including muscle associations and muscle vertex indices.
 
@@ -674,9 +674,7 @@ class VAREN(HSMAL):
 
         # Aggregate all muscle-related vertices
         all_muscle_idxs = np.concatenate([self.part2vertices[part] for part in muscle_parts])
-
-        # Load muscle labels and determine the number of muscles
-        self.muscle_labels = np.load(muscle_labels_path)
+        
         self.num_muscles = np.max(self.muscle_labels) + 1
         num_joints = self.get_num_joints()
 
