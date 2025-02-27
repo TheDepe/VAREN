@@ -13,7 +13,6 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.6.0"
 license = { text = "Proprietary" }
-homepage = "https://varen.is.tue.mpg.de/"
 dependencies = [
     "numpy>=1.16.2",
     "torch>=1.0.1.post2",
