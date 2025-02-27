@@ -1,4 +1,4 @@
-# VAREN: Very Accurate and Realistic Equine Network
+# 🐎 VAREN: Very Accurate and Realistic Equine Network
 
 [ [Project Page](https://varen.is.tue.mpg.de/) ][ [Paper](https://openaccess.thecvf.com/content/CVPR2024/papers/Zuffi_VAREN_Very_Accurate_and_Realistic_Equine_Network_CVPR_2024_paper.pdf) ][ [Training Code](https://github.com/silviazuffi/varen) ]
 
@@ -6,11 +6,10 @@ This respository contains a user-friendly, light-weight implementation similar t
 
 
 For the original code base, including the training methods, please see the [training code](https://github.com/silviazuffi/varen).
-| ![Left](images/rightside.png) | ![Front](images/front.png) | ![Right](images/leftside.png) |
-|------------------------------|----------------------------|--------------------------------|
+![Image](images/VAREN.png) 
 
 
-Visualisation output from `example/visualise_model.py`. The image depicts the VAREN model in neutral pose, with colours reflecting the face normals.
+
 
 ---
 
@@ -45,8 +44,8 @@ which include joints for the neck, jaw, ears and tail and hooves.
 VAREN is defined by a function M(θ, β), where θ is the pose parameters, β the shape parameters.
 
 ## News
-
-- 16 January 2025: This repo goes live.
+- 🔥 27 February 2025: Package available on pip!
+- ⚡ 16 January 2025: This repo goes live.
 
 ## Installation
 
