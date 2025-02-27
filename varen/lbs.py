@@ -419,8 +419,9 @@ def muscle_deformations(vertices, muscle_deformer):
 
     mdv = torch.zeros_like(vertices)
     for i in range(len(Bm)):
-        idx = muscle_idxs[i]
-        mdv[:, idx] = Bm[i].forward(betas_muscle[:, i]).view(vertices.shape[0], -1, 3)
+        if Bm[i] is not None: # Handle Muscle with no Vertices
+            idx = muscle_idxs[i]
+            mdv[:, idx] = Bm[i].forward(betas_muscle[:, i]).view(vertices.shape[0], -1, 3)
 
     return vertices + mdv, mdv
      

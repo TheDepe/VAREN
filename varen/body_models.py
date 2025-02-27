@@ -9,15 +9,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .lbs import (
-    lbs, vertices2landmarks, find_dynamic_lmk_idx_and_bcoords, blend_shapes)
+from .lbs import lbs, blend_shapes
 
 from .vertex_ids import vertex_ids as VERTEX_IDS
-from .vertex_ids import poll_vert_ids as POLL_VERT_IDS
+
 
 from .utils import (
     Struct, to_np, to_tensor, Tensor, Array,
     SMALOutput, VARENOutput, MuscleDeformer, axis_angle_to_quaternion)
+
 from .vertex_joint_selector import VertexJointSelector
 from collections import namedtuple
 
@@ -410,7 +410,7 @@ class HSMAL(SMAL):
 
 class VAREN(HSMAL):
     """
-    VAREN (Very Accurate and Realistic Equine Network) class that extends the `HSMAL` class.
+    VAREN (Very Accurate and Realistic Equine Network) class that extends the HSMAL class.
     
     This model is designed for equine (horse) body shape and pose estimation. It utilizes a similar approach to SMPL,
     but is specifically tailored for horses. The model includes the ability to simulate muscle deformations using a neural 
@@ -451,7 +451,7 @@ class VAREN(HSMAL):
                  ext: str ='pkl',
                  model_file_name: Optional[str] = None,
                  muscle_labels_filename: Optional[str] = "varen_muscle_vertex_labels.npy",
-                 ckpt_file: Optional[str] = None,
+                 ckpt_file: Optional[str] = 'varen.pth',
                  **kwargs) -> None:
         """
         Initializes the VAREN model, which is a highly accurate and realistic model for equine body shape and pose 
@@ -473,7 +473,7 @@ class VAREN(HSMAL):
             model_file_name (Optional[str], optional): The specific model filename (default is None).
             muscle_labels_filename (Optional[str], optional): Filename for muscle vertex labels (default is "varen_muscle_vertex_labels.npy").
             ckpt_file (Optional[str], optional): Path to the checkpoint file for model loading (default is None).
-            **kwargs: Additional arguments passed to the parent class `HSMAL` initialization.
+            **kwargs: Additional arguments passed to the parent class HSMAL initialization.
         """
 
         self.use_muscle_deformations = use_muscle_deformations
@@ -491,8 +491,8 @@ class VAREN(HSMAL):
             assert osp.exists(varen_path), 'Path {} does not exist!'.format(
                 varen_path)
 
-            with open(varen_path, 'rb') as smpl_file:
-                data_struct = Struct(**pickle.load(smpl_file,
+            with open(varen_path, 'rb') as file:
+                data_struct = Struct(**pickle.load(file,
                                                    encoding='latin1'))
                 
         if vertex_ids is None:
@@ -527,8 +527,12 @@ class VAREN(HSMAL):
             self.parts = data_struct.parts
             self.partSet = range(len(self.parts))
 
+        # Likely depricated for the below
         if hasattr(data_struct, 'part2bodyPoints'):
             self.part2bodyPoints = data_struct.part2bodyPoints
+
+        if hasattr(data_struct, 'part2vertices'):
+            self.part2vertices = data_struct.part2vertices
         
         if hasattr(data_struct, 'colors_names'):
             self.colors_names = data_struct.colors_names
@@ -545,16 +549,14 @@ class VAREN(HSMAL):
             self.create_neural_muscle_deformer(model_path=model_path, muscle_labels_filename=muscle_labels_filename)
             
             # If path exists, load
-            if ckpt_file == 'varen.pth':
+            if ckpt_file is not None:
                 ckpt_path = osp.join(model_path, ckpt_file)
-            else:
-                ckpt_path = ckpt_file
-            
+ 
             if ckpt_path is not None:
-                print("Loading model from: ", ckpt_path)
+                print("Loading VAREN Muscle Model from: ", ckpt_path)
                 chkpt = torch.load(ckpt_path, weights_only=True)
-                self.Bm.load_state_dict(chkpt['Bm']) # Should pull what it needs
-                self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Should pull what it needs
+                self.Bm.load_state_dict(chkpt['Bm']) # Load Bm weights (Muscle Betas) -> Deforms vertices based on betas
+                self.betas_muscle_predictor.load_state_dict(chkpt['betas_muscle_predictor']) # Load betas muscle predictor weights
             
 
     def create_neural_muscle_deformer(self, model_path: str, muscle_labels_filename: str) -> None:
@@ -568,11 +570,16 @@ class VAREN(HSMAL):
             muscle_labels_filename (str): The filename of the muscle vertex labels.
         """
         muscle_labels_path = osp.join(model_path, muscle_labels_filename)
-        A = self.define_muscle_deformations_variables(muscle_labels_path=muscle_labels_path)
-        self.betas_muscle_predictor =  BetasMusclePredictor(
-            muscle_associations = A,
+        muscle_associations = self.define_muscle_deformations_variables(muscle_labels_path=muscle_labels_path)
+
+        # Predict Muscle Betas based on pose and shape
+        self.betas_muscle_predictor = MuscleBetaPredictor(
+            muscle_associations = muscle_associations,
             shape_beta_for_muscles = self.shape_betas_for_muscles
-            )
+        )
+        
+        # Predict offsets based on muscle betas
+        self.Bm = self.create_Bm()
 
     def forward(self, 
                 betas: Optional[Tensor] = None,
@@ -600,141 +607,156 @@ class VAREN(HSMAL):
             VARENOutput: The output of the forward pass, including the computed body shape, pose, vertices, muscle activations, etc.
         """
         
-        global_orient = (global_orient if global_orient is not None else
-                         self.global_orient)
-        
-        body_pose = body_pose if body_pose is not None else self.body_pose
-        betas = betas if betas is not None else self.betas
-
-        apply_trans = transl is not None or hasattr(self, 'transl')
-
-        if transl is None and hasattr(self, 'transl'):
-            transl = self.transl
+        global_orient = self.global_orient if global_orient is None else global_orient
+        body_pose = self.body_pose if body_pose is None else body_pose
+        betas = self.betas if betas is None else betas
+        transl = transl or getattr(self, 'transl', None)
 
         full_pose = torch.cat([global_orient, body_pose], dim=1)
 
         # Muscle Predictor forward pass
-        
-        if self.use_muscle_deformations:
-            # A set of decoders, one for each muscle
-
-            betas_muscle, A = self.betas_muscle_predictor.forward(full_pose, betas) # correct.
-            # This is just a data class. 
-            muscle_deformer = MuscleDeformer(betas_muscle, self.Bm, self.muscle_idxs)
-        else:
-            muscle_deformer = None
-
+        muscle_deformer = self.compute_muscle_deformations(full_pose, betas) if self.use_muscle_deformations else None
+    
         vertices, joints, mdv = lbs(betas, full_pose, self.v_template,
                             self.shapedirs, self.posedirs,
                             self.J_regressor, self.parents,
                             self.lbs_weights, pose2rot=pose2rot,
                             muscle_deformer=muscle_deformer)
 
-        # Add extra points to the joints (eg keypoints)?
         joints = self.vertex_joint_selector(vertices, joints)
-        # Map the joints to the current dataset
         if self.joint_mapper is not None:
             joints = self.joint_mapper(joints)
 
-        if apply_trans:
+        if transl is not None:
             joints += transl.unsqueeze(dim=1)
             vertices += transl.unsqueeze(dim=1)
-        
-        # Separate joints from surface keypoints
-        
+                
         output = VARENOutput(vertices=vertices if return_verts else None,
                         global_orient=global_orient,
                         body_pose=body_pose,
                         joints=joints[:,:self.NUM_JOINTS],
                         surface_keypoints=joints[:,self.NUM_JOINTS:],
                         body_betas=betas,
-                        muscle_betas=betas_muscle if self.use_muscle_deformations else None,
+                        muscle_betas=muscle_deformer.betas_muscle if self.use_muscle_deformations else None,
                         full_pose=full_pose if return_full_pose else None,
-                        muscle_activations=A if self.use_muscle_deformations else None,
+                        muscle_activations=self.A if self.use_muscle_deformations else None,
                         mdv=mdv if self.use_muscle_deformations else None)
         return output
+    
+    def compute_muscle_deformations(self, full_pose, betas):
+        """Computes muscle deformations if enabled."""
+        muscle_betas, self.A = self.betas_muscle_predictor.forward(full_pose, betas)
+        # Muscle Deformer is a just a Dataclass containing the outputs of MuscleBetasPredictor
+        return MuscleDeformer(muscle_betas, self.Bm, self.muscle_vertex_map) 
 
     def define_muscle_deformations_variables(self, muscle_labels_path: Optional[str] = None) -> torch.Tensor:
         """
-        Defines the muscle deformation variables, including muscle associations and muscle vertex indices.
+        Defines muscle deformation variables, including muscle associations and muscle vertex indices.
+
+        This function:
+        - Loads muscle labels and determines the number of distinct muscles.
+        - Establishes muscle-to-joint associations for deformation computation.
+        - Maps mesh vertices to their corresponding muscles.
 
         Args:
-            muscle_labels_path (Optional[str], optional): Path to the muscle labels (default is None).
+            muscle_labels_path (Optional[str], optional): Path to the muscle labels file. Defaults to None.
 
         Returns:
             torch.Tensor: A tensor representing muscle associations for the horse model.
         """
-        
-        self.muscle_labels = np.load(open(muscle_labels_path, 'rb'))
 
+        # Define the anatomical parts associated with muscles
+        muscle_parts = [
+            'LScapula', 'RScapula', 'Spine1', 'Spine2', 'LBLeg1', 'LBLeg2', 'LBLeg3',
+            'Neck1', 'Neck2', 'Neck', 'Spine', 'LFLeg1', 'LFLeg2', 'LFLeg3', 'RFLeg2',
+            'RFLeg3', 'RFLeg1', 'Pelvis', 'RBLeg2', 'RBLeg3', 'RBLeg1', 'Head'
+        ]
+
+        # Aggregate all muscle-related vertices
+        all_muscle_idxs = np.concatenate([self.part2vertices[part] for part in muscle_parts])
+
+        # Load muscle labels and determine the number of muscles
+        self.muscle_labels = np.load(muscle_labels_path)
         self.num_muscles = np.max(self.muscle_labels) + 1
-
-        self.muscle_parts = ['LScapula', 'RScapula', 'Spine1', 'Spine2', 'LBLeg1', 'LBLeg2', 'LBLeg3', 'Neck1', 'Neck2', 'Neck', 'Spine', 'LFLeg1', 'LFLeg2', 'LFLeg3', 'RFLeg2', 'RFLeg3', 'RFLeg1', 'Pelvis', 'RBLeg2', 'RBLeg3', 'RBLeg1', 'Head']
-        self.muscle_parts_idx = []
-        all_idxs = []
-
-        for pa in self.muscle_parts:
-            self.muscle_parts_idx += [self.parts[pa]]
-            if pa == 'Head':
-                all_idxs += list(POLL_VERT_IDS)
-            else:
-                all_idxs += list(self.part2bodyPoints[self.parts[pa]])
-        self.all_muscle_idxs = all_idxs
-
-        # Define the vertices that have no muscle to be associated
         num_joints = self.get_num_joints()
 
-        # Define part-muscle assciation function
+        # Initialize muscle-to-joint association tensor
         muscle_associations = torch.zeros((num_joints, self.num_muscles))
-        
-        # Only assign for the parts that we consider affect the muscles (muscle_parts)
-        for part in self.muscle_parts_idx:
-            # Vertices of this part
-            part_vert_ids = self.part2bodyPoints[part]
-            labels = np.unique(self.muscle_labels[part_vert_ids])
-            
-            muscle_associations[part-1, labels] += 1
-            
-            parent = self.parents[part]
 
-            if parent < num_joints:
-                muscle_associations[parent-1,labels] += 1
-                
-                idx = np.where(self.parents==part)[0]
-                for k in idx:
-                    muscle_associations[k-1, labels] += 1
+        # Assign muscle influences to joints based on muscle labels
+        for part in muscle_parts:
+            part_idx = self.parts[part]  # Get joint index for the part
+            part_vertices = self.part2vertices[part]  # Retrieve associated vertices
+            labels = np.unique(self.muscle_labels[part_vertices])  # Find unique muscle labels
 
-        muscle_associations = muscle_associations / torch.max(muscle_associations)
+            # Assign muscles to the corresponding joint
+            muscle_associations[part_idx - 1, labels] += 1
 
-        # probably a more effecient way to do this
+            # Also propagate to parent joints
+            parent_joint = self.parents[part_idx]
+            if parent_joint > -1:
+                muscle_associations[parent_joint - 1, labels] += 1
 
-        # Define the indices of the vertices that belong to each muscle
-        self.muscle_idxs = [None]*self.num_muscles
-        for i in range(self.num_muscles):
-            self.muscle_idxs[i] = list(set(all_idxs) & set(np.where(self.muscle_labels==i)[0]))
+                # Propagate associations to child joints
+                for child_idx in np.where(self.parents == part_idx)[0]:
+                    muscle_associations[child_idx - 1, labels] += 1
 
-        # What is this?
-        self.Bm = torch.nn.ModuleList() 
-        for i in range(self.num_muscles):
-            pose_d = 4
-            self.Bm.append(
-                nn.Sequential(
-                    nn.Linear(
-                        self.muscle_betas_size * num_joints * pose_d + self.shape_betas_for_muscles,
-                        len(self.muscle_idxs[i])*3,
-                        bias=False
-                        )
-                    )
-                )
+        # Normalize muscle associations for numerical stability
+        muscle_associations /= torch.max(muscle_associations)
 
-            for m in self.Bm[i].modules():
-                if isinstance(m, nn.Linear):
-                   torch.nn.init.normal_(m.weight, mean=0.0, std=0.001)
-                   if m.bias is not None:
-                       m.bias.data.zero_()
+        # Define the vertex indices associated with each muscle
+        muscle_idx_set = set(all_muscle_idxs)
+        self.muscle_vertex_map = [
+            list(muscle_idx_set & set(np.where(self.muscle_labels == i)[0]))
+            for i in range(self.num_muscles)
+        ]
 
         return muscle_associations
-    
+
+    def create_Bm(self):
+        """
+        Creates and returns a `torch.nn.ModuleList` containing linear layers (muscle deformation networks), 
+        one for each muscle.
+
+        Each linear layer maps a combination of muscle pose and shape parameters 
+        into per-vertex deformations for the corresponding muscle.
+
+        Logic:
+        - Each muscle gets a corresponding layer, unless the muscle maps to zero vertices.
+        - Input dimension is based on pose and shape parameters.
+        - Output dimension is 3 * number of vertices associated with the muscle (x, y, z per vertex).
+        - If a muscle does not affect any vertices (out_dim == 0), a placeholder `None` is stored 
+        at that index in the list instead of a real layer (to avoid unnecessary computation).
+
+        Returns:
+            torch.nn.ModuleList: A list where each entry is either a neural network layer (for 
+            muscles that have associated vertices) or `None` (for muscles that don't).
+
+        Notes:
+            - This design choice allows muscles to optionally have no influence (e.g., if they 
+            correspond to no vertices in the mesh). This is safer than adding a "no-op" layer 
+            since it avoids calling unnecessary zero-output operations.
+            - The weight of each linear layer is initialized to a normal distribution with mean 0 
+            and standard deviation 0.001.
+        """
+        num_joints = self.get_num_joints()
+        Bm = torch.nn.ModuleList() 
+        # Append a layer for each muscle
+        for i in range(self.num_muscles):
+            pose_d = 4
+            input_dim = self.muscle_betas_size * num_joints * pose_d + self.shape_betas_for_muscles
+            out_dim = len(self.muscle_vertex_map[i])*3
+
+            # Avoid No Op layers if the muscle relates to no vertices
+            if input_dim > 0 and out_dim > 0:
+                layer = nn.Linear(input_dim,out_dim,bias=False)
+                torch.nn.init.normal_(layer.weight, mean=0.0, std=0.001)
+                Bm.append(nn.Sequential(layer))
+            else:
+                Bm.append(None)
+
+        return Bm
+
     @property
     def keypoint_information(self) -> Dict[str, int]:
         """
@@ -747,27 +769,24 @@ class VAREN(HSMAL):
         """
         return VERTEX_IDS['varen']
 
-# Get this part working. Figure out the opts and stuff.
-# Probably put the rest of the arguments from opts in the kwargs on VAREN and define them here. Just upack the kwargs on call
-class BetasMusclePredictor(nn.Module):
-    def __init__(self, muscle_associations, shape_beta_for_muscles, debug=False, dtype=torch.float32):
-        super(BetasMusclePredictor, self).__init__()
-        #self.opts = opts
 
+
+class MuscleBetaPredictor(nn.Module):
+    """
+    Predicts betas of Muscles based on pose and shape of horse.
+    """
+    def __init__(self, muscle_associations, shape_beta_for_muscles, dtype=torch.float32):
+        super(MuscleBetaPredictor, self).__init__()
+    
         self.shape_betas_for_muscles = shape_beta_for_muscles
         self.num_parts, self.num_muscle = muscle_associations.shape
-        r_dim = 4 # dimension of rotation -> 4 = quaternion
-        num_pose = self.num_parts * 4 # why 4?
-        self.num_pose = num_pose
-
+        rot_form_dim = 4 # dimension of rotation -> 4 = quaternion
+        self.num_pose = self.num_parts * rot_form_dim
         
-
         self.muscledef = nn.Linear(self.num_pose + self.shape_betas_for_muscles, self.num_muscle, bias=False)
         torch.nn.init.normal_(self.muscledef.weight, mean=0.0, std=0.001).to(dtype)
-        
         A_here = torch.zeros(self.num_muscle, self.num_pose).to(dtype)
-        if debug:
-            np.save('A_init.npy', muscle_associations.detach().cpu().numpy())
+        
 
         if self.shape_betas_for_muscles > 0:
             A_here = torch.zeros(
@@ -776,9 +795,8 @@ class BetasMusclePredictor(nn.Module):
                 )
             
         for p in range(self.num_parts):
-            # What is r dim?
-            for k in range(r_dim):
-                A_here[:, r_dim * p + k] = muscle_associations[p, :]
+            for k in range(rot_form_dim):
+                A_here[:, rot_form_dim * p + k] = muscle_associations[p, :]
 
         if self.shape_betas_for_muscles > 0:
             A_here[:,self.num_pose:] = 1
@@ -786,7 +804,8 @@ class BetasMusclePredictor(nn.Module):
         self.A = torch.nn.Parameter(A_here, requires_grad=True).to(dtype) # We learn this. Why do we copy it?
 
     def forward(self, pose, betas):
-        tensor_b = axis_angle_to_quaternion(pose[:,3:].view(-1,self.num_parts,3)).view(-1,self.num_parts*4)
+        pose = pose[:,3:].view(-1,self.num_parts,3)
+        tensor_b = axis_angle_to_quaternion(pose).view(-1,self.num_parts*4)
         if self.shape_betas_for_muscles > 0:
             tensor_b = torch.cat((tensor_b, betas[:,:self.shape_betas_for_muscles]),dim=1)
 
@@ -800,3 +819,5 @@ class BetasMusclePredictor(nn.Module):
         betas_muscle = tensor_a * tensor_b
 
         return betas_muscle, self.A*self.muscledef.weight
+    
+
