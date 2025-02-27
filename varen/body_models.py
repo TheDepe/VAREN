@@ -610,7 +610,7 @@ class VAREN(HSMAL):
         global_orient = self.global_orient if global_orient is None else global_orient
         body_pose = self.body_pose if body_pose is None else body_pose
         betas = self.betas if betas is None else betas
-        transl = transl or getattr(self, 'transl', None)
+        transl = self.transl if transl is None else transl
 
         full_pose = torch.cat([global_orient, body_pose], dim=1)
 

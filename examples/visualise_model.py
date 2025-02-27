@@ -35,11 +35,13 @@ def main():
 
     pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
     shape = torch.rand(1, 39) 
+    transl = torch.rand(1,3)
+    global_orient = torch.rand(1,3)
 
     MESH_COLOUR = (torch.rand(3) * 255).int()
 
     # Process base model
-    model_output_base = varen_base(body_pose=pose, betas=shape)
+    model_output_base = varen_base(body_pose=pose, betas=shape, transl=transl, global_orient=global_orient)
     vertices_base = model_output_base.vertices.squeeze().detach().numpy()
     joints_base = model_output_base.joints.squeeze().detach().numpy()
     faces_base = varen_base.faces
@@ -48,7 +50,7 @@ def main():
     joints_pcd_base = trimesh.points.PointCloud(joints_base, size=0.01)
 
     # Process extended model
-    model_output_ext = varen_ext(body_pose=pose, betas=shape)
+    model_output_ext = varen_ext(body_pose=pose, betas=shape, transl=transl, global_orient=global_orient)
     vertices_ext = model_output_ext.vertices.squeeze().detach().numpy()
     joints_ext = model_output_ext.joints.squeeze().detach().numpy()
     faces_ext = varen_ext.faces
