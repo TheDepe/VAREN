@@ -8,7 +8,7 @@ This respository contains a user-friendly, light-weight implementation similar t
 For the original code base, including the training methods, please see the [training code](https://github.com/silviazuffi/varen).
 
 
-![Image](images/VAREN_rounded.png) 
+![Image](images/VAREN_1.png) 
 
 
 
