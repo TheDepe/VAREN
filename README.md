@@ -6,7 +6,7 @@ This respository contains a user-friendly, light-weight implementation similar t
 
 
 For the original code base, including the training methods, please see the [training code](https://github.com/silviazuffi/varen).
-![Image](images/VAREN.png) 
+![Image](images/VAREN_rounded.png) 
 
 
 
@@ -15,7 +15,7 @@ For the original code base, including the training methods, please see the [trai
 
 ## TO DOS:
 - [ ] Extend/ the Vertex Selector for each model. Currently missing are the Hooves.  
-- [x] Remove Chumpy dependency (not only needed for reading the current file formats)
+- [x] Remove Chumpy dependency (original optimisation was done with Chumpy)
 - [x] Add more documentation
 
 ## Table of Contents
