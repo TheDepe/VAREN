@@ -13,7 +13,7 @@ __pycache__/
 *.pth
 data/
 models/
-
+non-public/
 # Distribution / packaging
 .Python
 build/
