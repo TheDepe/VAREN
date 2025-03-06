@@ -401,7 +401,8 @@ class HSMAL(SMAL):
 
         super(HSMAL, self).__init__(
             model_path=model_path, data_struct=data_struct,
-            batch_size=batch_size, dtype=dtype, vertex_ids=vertex_ids,
+            batch_size=batch_size, v_template=v_template, joint_mapper=joint_mapper,
+            dtype=dtype, vertex_ids=vertex_ids,
             ext=ext, **kwargs)       
         
         self.vertex_joint_selector = VertexJointSelector(
@@ -497,7 +498,8 @@ class VAREN(HSMAL):
 
         super(VAREN, self).__init__(
             model_path=model_path, data_struct=data_struct,
-            batch_size=batch_size, dtype=dtype, vertex_ids=vertex_ids,
+            batch_size=batch_size, v_template=v_template, joint_mapper=joint_mapper, 
+            dtype=dtype, vertex_ids=vertex_ids,
             ext=ext, high_res=True, **kwargs)       
         
         self.batch_size = batch_size
