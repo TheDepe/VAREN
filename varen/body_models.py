@@ -549,7 +549,9 @@ class VAREN(HSMAL):
             # If path exists, load checkpoint
             if ckpt_file is not None:
                 ckpt_path = osp.join(model_path, ckpt_file)
- 
+            else:
+                ckpt_path = None
+
             if ckpt_path is not None:
                 print("Loading VAREN Muscle Model from: ", ckpt_path)
                 chkpt = torch.load(ckpt_path, weights_only=True)
