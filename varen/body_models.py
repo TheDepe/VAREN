@@ -94,7 +94,7 @@ class SMAL(nn.Module):
                 The batch size used for creating the member variables
             joint_mapper: object, optional
                 An object that re-maps the joints. Useful if one wants to
-                re-order the SMPL joints to some other convention (e.g. MSCOCO)
+                re-order the model joints to some other convention (e.g. MSCOCO)
                 (default = None)
             gender: str, optional
                 Which gender to load
@@ -139,8 +139,6 @@ class SMAL(nn.Module):
             to_tensor(to_np(shapedirs), dtype=dtype))
 
         if vertex_ids is None:
-            # SMPL and SMPL-H share the same topology, so any extra joints can
-            # be drawn from the same place
             vertex_ids = VERTEX_IDS['smal']
 
         self.dtype = dtype
@@ -214,6 +212,7 @@ class SMAL(nn.Module):
             v_template = data_struct.v_template
         if not torch.is_tensor(v_template):
             v_template = to_tensor(to_np(v_template), dtype=dtype)
+
         # The vertices of the template model
         self.register_buffer('v_template', v_template)
 
@@ -500,7 +499,7 @@ class VAREN(HSMAL):
             model_path=model_path, data_struct=data_struct,
             batch_size=batch_size, v_template=v_template, joint_mapper=joint_mapper, 
             dtype=dtype, vertex_ids=vertex_ids,
-            ext=ext, high_res=True, **kwargs)       
+            ext=ext, high_res=True, num_betas = num_betas, **kwargs)       
         
         self.batch_size = batch_size
         shapedirs = data_struct.shapedirs
@@ -527,9 +526,6 @@ class VAREN(HSMAL):
             self.partSet = range(len(self.parts))
 
         # Likely depricated for the below
-        if hasattr(data_struct, 'part2bodyPoints'):
-            self.part2bodyPoints = data_struct.part2bodyPoints
-
         if hasattr(data_struct, 'part2vertices'):
             self.part2vertices = data_struct.part2vertices
         
@@ -547,10 +543,10 @@ class VAREN(HSMAL):
         
         
         if self.use_muscle_deformations:
-            # Create Neural Muscle Deformations
+            # Neural muscle deformer added to self
             self.create_neural_muscle_deformer()
             
-            # If path exists, load
+            # If path exists, load checkpoint
             if ckpt_file is not None:
                 ckpt_path = osp.join(model_path, ckpt_file)
  
