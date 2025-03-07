@@ -133,6 +133,9 @@ class SMAL(nn.Module):
 
         self._num_betas = num_betas
         shapedirs = shapedirs[:, :, :num_betas]
+
+        device = shapedirs.device
+
         # The shape components
         self.register_buffer(
             'shapedirs',
@@ -156,12 +159,12 @@ class SMAL(nn.Module):
         if create_betas:
             if betas is None:
                 default_betas = torch.zeros(
-                    [batch_size, self.num_betas], dtype=dtype)
+                    [batch_size, self.num_betas], dtype=dtype, device=device)
             else:
                 if torch.is_tensor(betas):
                     default_betas = betas.clone().detach()
                 else:
-                    default_betas = torch.tensor(betas, dtype=dtype)
+                    default_betas = torch.tensor(betas, dtype=dtype, device=device)
 
             self.register_parameter(
                 'betas', nn.Parameter(default_betas, requires_grad=True))
@@ -172,13 +175,13 @@ class SMAL(nn.Module):
         if create_global_orient:
             if global_orient is None:
                 default_global_orient = torch.zeros(
-                    [batch_size, 3], dtype=dtype)
+                    [batch_size, 3], dtype=dtype, device=device)
             else:
                 if torch.is_tensor(global_orient):
                     default_global_orient = global_orient.clone().detach()
                 else:
                     default_global_orient = torch.tensor(
-                        global_orient, dtype=dtype)
+                        global_orient, dtype=dtype, device=device)
 
             global_orient = nn.Parameter(default_global_orient,
                                          requires_grad=True)
@@ -187,13 +190,13 @@ class SMAL(nn.Module):
         if create_body_pose:
             if body_pose is None:
                 default_body_pose = torch.zeros(
-                    [batch_size, self.NUM_JOINTS * 3], dtype=dtype)
+                    [batch_size, self.NUM_JOINTS * 3], dtype=dtype, device=device)
             else:
                 if torch.is_tensor(body_pose):
                     default_body_pose = body_pose.clone().detach()
                 else:
                     default_body_pose = torch.tensor(body_pose,
-                                                     dtype=dtype)
+                                                     dtype=dtype, device=device)
             self.register_parameter(
                 'body_pose',
                 nn.Parameter(default_body_pose, requires_grad=True))
@@ -202,14 +205,15 @@ class SMAL(nn.Module):
             if transl is None:
                 default_transl = torch.zeros([batch_size, 3],
                                              dtype=dtype,
-                                             requires_grad=True)
+                                             requires_grad=True, device=device)
             else:
-                default_transl = torch.tensor(transl, dtype=dtype)
+                default_transl = torch.tensor(transl, dtype=dtype, device=device)
             self.register_parameter(
                 'transl', nn.Parameter(default_transl, requires_grad=True))
 
         if v_template is None:
             v_template = data_struct.v_template
+            
         if not torch.is_tensor(v_template):
             v_template = to_tensor(to_np(v_template), dtype=dtype)
 
@@ -613,6 +617,7 @@ class VAREN(HSMAL):
         transl = self.transl if transl is None else transl
 
         full_pose = torch.cat([global_orient, body_pose], dim=1)
+
 
         # Muscle Predictor forward pass
         muscle_deformer = self.compute_muscle_deformations(full_pose, betas) if self.use_muscle_deformations else None
