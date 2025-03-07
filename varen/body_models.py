@@ -104,6 +104,7 @@ class SMAL(nn.Module):
         '''
         # NOTE: No PCA on the pose space
 
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         if data_struct is None:
             if osp.isdir(model_path):
@@ -133,8 +134,6 @@ class SMAL(nn.Module):
 
         self._num_betas = num_betas
         shapedirs = shapedirs[:, :, :num_betas]
-
-        device = shapedirs.device
 
         # The shape components
         self.register_buffer(
@@ -213,7 +212,7 @@ class SMAL(nn.Module):
 
         if v_template is None:
             v_template = data_struct.v_template
-            
+
         if not torch.is_tensor(v_template):
             v_template = to_tensor(to_np(v_template), dtype=dtype)
 
