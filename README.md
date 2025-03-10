@@ -123,7 +123,7 @@ python examples/visualise_model.py --model_path /path/to/downloaded/models
 ```
 Optionally, you can save the meshes as follows:
 ```
-python examples/visualise_model.py --model_path /path/to/downloaded/models --output_path /path/to/save/meshes --save_meshes
+python examples/visualise_model.py --model_path /path/to/downloaded/models --output_path /path/to/save/meshes --save-meshes
 ```
 
 ## Using the model

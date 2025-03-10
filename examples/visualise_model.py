@@ -7,12 +7,8 @@ import numpy as np
 from varen import VAREN
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Export VAREN meshes to a specified folder.")
-    parser.add_argument('--model_path', type=str, default='models/varen', help='Location of saved model files.')
-    parser.add_argument('--output_path', type=str, default="", help="Folder to save the exported mesh files. Default is the current directory.")
-    parser.add_argument('--save-meshes', action='store_true', help="Option to save meshes.")
-    args = parser.parse_args()
+def main(args):
+    
 
     output_path = args.output_path
 
@@ -85,5 +81,10 @@ def main():
 # add arguments for output folder path
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Export VAREN meshes to a specified folder.")
+    parser.add_argument('--model_path', type=str, default='models/varen', help='Location of saved model files.')
+    parser.add_argument('--output_path', type=str, default="", help="Folder to save the exported mesh files. Default is the current directory.")
+    parser.add_argument('--save-meshes', action='store_true', help="Option to save meshes.")
+    args = parser.parse_args()
 
-    main()
+    main(args)
