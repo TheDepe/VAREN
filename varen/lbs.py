@@ -206,36 +206,22 @@ def lbs(
     batch_size = max(betas.shape[0], pose.shape[0])
     device, dtype = betas.device, betas.dtype
 
-    # Add shape contribution
+    # 1. Add shape contribution
     v_shaped = v_template + blend_shapes(betas, shapedirs)
 
-    # Get the joints
+    # 2. Get the joints and rotation matrices
     # NxJx3 array
     J = vertices2joints(J_regressor, v_shaped)
+    rot_mats = get_rotmats(pose, pose2rot)
 
+    # 3. Get the pose contribution
     if muscle_deformer is not None:
-        v_shaped, mdv = muscle_deformations(v_shaped, muscle_deformer)
+        mdv = neural_pose_deformations(v_shaped, muscle_deformer)
+        v_posed = v_shaped + mdv
     else:
         mdv = None
-    # 3. Add pose blend shapes
-    # N x J x 3 x 3
-    ident = torch.eye(3, dtype=dtype, device=device)
-    if pose2rot:
-        rot_mats = batch_rodrigues(pose.view(-1, 3)).view(
-            [batch_size, -1, 3, 3])
-        pose_feature = (rot_mats[:, 1:, :, :] - ident).view([batch_size, -1])
-        
-        # (N x P) x (P, V * 3) -> N x V x 3
-        pose_offsets = torch.matmul(
-            pose_feature, posedirs).view(batch_size, -1, 3)
-    else:
-        pose_feature = pose[:, 1:].view(batch_size, -1, 3, 3) - ident
-        rot_mats = pose.view(batch_size, -1, 3, 3)
+        v_posed = v_shaped + pose_deformations(rot_mats, posedirs)
 
-        pose_offsets = torch.matmul(pose_feature.view(batch_size, -1),
-                                    posedirs).view(batch_size, -1, 3)
-
-    v_posed = pose_offsets + v_shaped
     # 4. Get the global joint location
     J_transformed, A = batch_rigid_transform(rot_mats, J, parents, dtype=dtype)
 
@@ -256,6 +242,31 @@ def lbs(
 
     return verts, J_transformed, mdv
 
+
+def get_rotmats(pose, pose2rot):
+    batch_size = pose.shape[0]
+
+    if pose2rot:
+        return batch_rodrigues(pose.view(-1, 3)).view([batch_size, -1, 3, 3])
+    else:
+        return pose.view(batch_size, -1, 3, 3)
+
+
+        
+def pose_deformations(rot_mats, posedirs):
+    dtype, device = rot_mats.dtype, rot_mats.device
+    batch_size = rot_mats.shape[0]
+
+    ident = torch.eye(3, dtype=dtype, device=device)
+    pose_feature = (rot_mats[:, 1:, :, :] - ident).view([batch_size, -1])
+    pose_offsets = torch.matmul(
+        pose_feature, posedirs).view(batch_size, -1, 3)
+    
+    return pose_offsets
+
+def neural_pose_deformations(vertices, muscle_deformer):
+    # Return just the muscle deformations
+    return muscle_deformations(vertices, muscle_deformer)[1]
 
 def vertices2joints(J_regressor: Tensor, vertices: Tensor) -> Tensor:
     ''' Calculates the 3D joint locations from the vertices

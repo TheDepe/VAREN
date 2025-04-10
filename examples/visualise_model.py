@@ -29,7 +29,7 @@ def main(args):
     varen_ext = VAREN(model_path, use_muscle_deformations=True)
     NUM_JOINTS = varen_ext.NUM_JOINTS
 
-    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.03
+    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
     shape = torch.rand(1, 39) 
     transl = torch.rand(1,3) *0
     global_orient = torch.rand(1,3) *0
