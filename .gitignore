@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+
+
 # Project Folders
 *.pkl
 *.npy
@@ -14,6 +16,9 @@ __pycache__/
 data/
 models/
 non-public/
+.ruff_cache/
+ruff_output.txt
+
 # Distribution / packaging
 .Python
 build/

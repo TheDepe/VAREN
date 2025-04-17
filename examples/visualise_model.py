@@ -1,14 +1,14 @@
+import argparse
 import os
+
+import numpy as np
 import torch
 import trimesh
-import argparse
-import numpy as np
 
 from varen import VAREN
 
 
 def main(args):
-    
 
     output_path = args.output_path
 
@@ -21,7 +21,6 @@ def main(args):
         else:
             print("Folder not created. Exiting.")
             return
-        
 
     model_path = args.model_path
 
@@ -30,9 +29,9 @@ def main(args):
     NUM_JOINTS = varen_ext.NUM_JOINTS
 
     pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
-    shape = torch.rand(1, 39) 
-    transl = torch.rand(1,3) *0
-    global_orient = torch.rand(1,3) *0
+    shape = torch.rand(1, 39)
+    transl = torch.rand(1, 3) * 0
+    global_orient = torch.rand(1, 3) * 0
 
     MESH_COLOUR = (torch.rand(3) * 255).int()
 
@@ -51,16 +50,16 @@ def main(args):
     joints_ext = model_output_ext.joints.squeeze().detach().numpy()
     faces_ext = varen_ext.faces
 
-    mesh_ext = trimesh.Trimesh(vertices_ext, faces_ext, face_colors=(MESH_COLOUR-255)*-1)
+    mesh_ext = trimesh.Trimesh(vertices_ext, faces_ext, face_colors=(MESH_COLOUR - 255) * -1)
     joints_pcd_ext = trimesh.points.PointCloud(joints_ext, size=0.01)
 
-    #mesh_ext.visual.face_colors[:] = np.array([138, 42, 173, 150]) # purple
-    #normals = (mesh_ext.face_normals + 1) / 2 
-    #colours = (normals * 255).astype(np.uint8)
-    #colours = np.hstack((colours, np.full((colours.shape[0], 1), 200)))
-    #colors = trimesh.visual.interpolate(values=mesh_ext.face_normals, color_map='viridis')
-    
-    #mesh_ext.visual.face_colors = colours
+    # mesh_ext.visual.face_colors[:] = np.array([138, 42, 173, 150]) # purple
+    # normals = (mesh_ext.face_normals + 1) / 2
+    # colours = (normals * 255).astype(np.uint8)
+    # colours = np.hstack((colours, np.full((colours.shape[0], 1), 200)))
+    # colors = trimesh.visual.interpolate(values=mesh_ext.face_normals, color_map='viridis')
+
+    # mesh_ext.visual.face_colors = colours
     joints_pcd_ext.colors = np.array([0, 0, 0, 255])
     joints_pcd_base.colors = np.array([0, 0, 0, 255])
     # Create and show scene
@@ -71,7 +70,7 @@ def main(args):
     if args.save_meshes:
         base_file_path = os.path.join(output_path, 'VAREN_base.ply') if output_path else 'VAREN_base.ply'
         full_file_path = os.path.join(output_path, 'VAREN_full.ply') if output_path else 'VAREN_full.ply'
-    
+
         trimesh.exchange.export.export_mesh(mesh_base, base_file_path)
         trimesh.exchange.export.export_mesh(mesh_ext, full_file_path)
         print(f"Saved 'VAREN_base_base.ply' Meshes to /{output_path}")

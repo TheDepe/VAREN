@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "varen"
-version = "1.0.6"
+version = "1.1.0"
 description = "PyTorch module for loading the VAREN body model"
 authors = [
     { name = "Dennis Perrett", email = "dennis.perrett@tuebingen.mpg.de" },
@@ -25,3 +25,53 @@ all = ["trimesh>=2.37.6", "pyglet<2.0"]
 
 [tool.setuptools]
 packages = ["varen"]
+
+
+# ruff
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+# Format all docstring code snippets with a line length of 88.
+docstring-code-line-length = 79
+# Existing trailing commas are used as an indication that short lines should be left separate.
+# Set to true, to ignore the magic trailing comma.
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "W",    # pycodestyle
+    "F",    # Pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "I",    # isort
+    "ARG",  # flake8-unused-arguments
+    "R",    # refactor from pylint
+    # TODO: add pylint!
+    "PL",    # pylint
+    # TODO: add pydocstyle
+    "D"     # pydocstyle
+    # TODO: add ruff-specific rules
+    # "RUF",  # ruff-specific rules
+]
+preview = true
+ignore = ["RET504"]  # TODO fix later
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+force-sort-within-sections = false
+
+# Pylint
+[tool.pylint.MASTER]
+# TODO add (some?) pylint rules to pre-commit
+# E.g., W0221 (arguments-differ) from pylint is not yet supported in ruff
+# see https://github.com/astral-sh/ruff/issues/970
+disable = "all"
+enable = ["W0221"]
+
+[tool.pylint.MESSAGES_CONTROL]
+disable = "invalid-name"

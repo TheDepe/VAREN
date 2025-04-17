@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+"""Vertex IDs of keypoints for various models."""
 # Max-Planck-Gesellschaft zur Förderung der Wissenschaften e.V. (MPG) is
 # holder of all proprietary rights on this computer program.
 # You can only use this computer program if you have closed
@@ -13,10 +12,6 @@
 # for Intelligent Systems. All rights reserved.
 #
 # Contact: ps-license@tuebingen.mpg.de
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 
 vertex_ids = {
@@ -49,49 +44,49 @@ vertex_ids = {
         'tail':		    1910,
     },
     'varen': {
-        'lfront_foot_tip':1473,
-        'rfront_foot_tip':3390,
-        'lfront_sesamoid':1505,
-        'rfront_sesamoid':3422,
-        'lback_foot_tip':1410,
-        'rback_foot_tip':3327,
-        'lback_calcaneous':744,
-        'rback_calcaneous':2661,
-        'back_left_foot_back':1359,
-        'back_right_foot_back':3276,
-        'front_left_foot_back':1446,
-        'front_right_foot_back':3363,
-        'lfront_knee':663 ,
-        'rfront_knee':2580,
-        'lear_tip':852,
-        'rear_tip':2769,
-        'tail_start':1717,
-        'tail_tip':1915,
-        'half_tail':1899,
-        'lear_base_back':798,
-        'rear_base_back':2714,
-        'lear_base_front_internal':881, #884,
-        'lear_base_front_external':904, #1314,
-        'rear_base_front_internal':2798, #2801,
-        'rear_base_front_external':2821, #3231,
-        'between_nostrils_base':1739,
-        'lnostril':1154,
-        'rnostril':3071, #3071,
-        'leye':1250, #1583,
-        'reye':3498,
-        'rcalcaneous':2661,
-        'lcalcaneous':744,
-        'lfront_coffin':1473,
-        'rfront_coffin':3390,
-        'lback_coffin':1410,
-        'rback_coffin':3327,
-        'end_sacral_vertebrae':1717,
-        'rcarpus_back':2005,
-        'lcarpus_back':88,
-        'tip_of_head':1691,
-        'rposterior':2536, #2176,
-        'lposterior':619, #259,
-        'middle_back':1712
+        'lfront_foot_tip': 1473,
+        'rfront_foot_tip': 3390,
+        'lfront_sesamoid': 1505,
+        'rfront_sesamoid': 3422,
+        'lback_foot_tip': 1410,
+        'rback_foot_tip': 3327,
+        'lback_calcaneous': 744,
+        'rback_calcaneous': 2661,
+        'back_left_foot_back': 1359,
+        'back_right_foot_back': 3276,
+        'front_left_foot_back': 1446,
+        'front_right_foot_back': 3363,
+        'lfront_knee': 663,
+        'rfront_knee': 2580,
+        'lear_tip': 852,
+        'rear_tip': 2769,
+        'tail_start': 1717,
+        'tail_tip': 1915,
+        'half_tail': 1899,
+        'lear_base_back': 798,
+        'rear_base_back': 2714,
+        'lear_base_front_internal': 881,  # 884,
+        'lear_base_front_external': 904,  # 1314,
+        'rear_base_front_internal': 2798,  # 2801,
+        'rear_base_front_external': 2821,  # 3231,
+        'between_nostrils_base': 1739,
+        'lnostril': 1154,
+        'rnostril': 3071,  # 3071,
+        'leye': 1250,  # 1583,
+        'reye': 3498,
+        'rcalcaneous': 2661,
+        'lcalcaneous': 744,
+        'lfront_coffin': 1473,
+        'rfront_coffin': 3390,
+        'lback_coffin': 1410,
+        'rback_coffin': 3327,
+        'end_sacral_vertebrae': 1717,
+        'rcarpus_back': 2005,
+        'lcarpus_back': 88,
+        'tip_of_head': 1691,
+        'rposterior': 2536,  # 2176,
+        'lposterior': 619,  # 259,
+        'middle_back': 1712
 
         }
     # 'varen': {
@@ -104,4 +99,3 @@ vertex_ids = {
     #     'tail':		    1910,
     # }
 }
-

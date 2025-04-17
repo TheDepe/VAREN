@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+"""VertexJoinSelector Class."""
 # Max-Planck-Gesellschaft zur Förderung der Wissenschaften e.V. (MPG) is
 # holder of all proprietary rights on this computer program.
 # You can only use this computer program if you have closed
@@ -14,35 +13,57 @@
 #
 # Contact: ps-license@tuebingen.mpg.de
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import numpy as np
-
 import torch
-import torch.nn as nn
+from torch import nn
 
 from .utils import to_tensor
 
 
-
+# TODO: IMPLEMENT THIS PROPERLY
 class VertexJointSelector(nn.Module):
+    """Placeholder module for selecting joints from vertices.
+
+    Used currently in HSMAL and SMAL models.
+
+    """
 
     def __init__(self, **kwargs):
-        super(VertexJointSelector, self).__init__()
+        """Initialise the JointVertexSelector.
 
+        Sets the extra_joints_idxs to an empty array.
+        """
+        super().__init__()
+        _ = kwargs  # to avoid unused argument warning
         extra_joints_idxs = np.array([])
 
         self.register_buffer('extra_joints_idxs',
                              to_tensor(extra_joints_idxs, dtype=torch.long))
 
     def forward(self, vertices, joints):
-        extra_joints = torch.index_select(vertices, 1, self.extra_joints_idxs.to(torch.long)) #The '.to(torch.long)'.
-                                                                                            # added to make the trace work in c++,
-                                                                                            # otherwise you get a runtime error in c++:
-                                                                                            # 'index_select(): Expected dtype int32 or int64 for index'
+        """Select the joints from the vertices.
+
+        Args:
+            vertices: The vertices of the model.
+            joints: The joints of the model.
+
+        Returns:
+            joints: The selected joints from the vertices.
+
+        NOTE: For VAREN, all joints are currently set under extra_joints..
+        TODO: Fix this.
+
+        """
+        # The '.to(torch.long)'.
+        # added to make the trace work in c++,
+        # otherwise you get a runtime error in c++:
+        # 'index_select(): Expected dtype int32 or int64 for index'
+        extra_joints = torch.index_select(
+            vertices,
+            1,
+            self.extra_joints_idxs.to(torch.long)
+            )
         joints = torch.cat([joints, extra_joints], dim=1)
 
         return joints
-    

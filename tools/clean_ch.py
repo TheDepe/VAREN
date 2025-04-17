@@ -1,30 +1,31 @@
-# -*- coding: utf-8 -*-
+"""Tool for removing chumpy objects from the pickle files.
 
-# Max-Planck-Gesellschaft zur Förderung der Wissenschaften e.V. (MPG) is
-# holder of all proprietary rights on this computer program.
-# You can only use this computer program if you have closed
-# a license agreement with MPG or you get the right to use the computer
-# program from someone who is authorized to grant you that right.
-# Any use of the computer program without a valid license is prohibited and
-# liable to prosecution.
-#
-# Copyright©2019 Max-Planck-Gesellschaft zur Förderung
-# der Wissenschaften e.V. (MPG). acting on behalf of its Max Planck Institute
-# for Intelligent Systems and the Max Planck Institute for Biological
-# Cybernetics. All rights reserved.
-#
-# Contact: ps-license@tuebingen.mpg.de
+Max-Planck-Gesellschaft zur Förderung der Wissenschaften e.V. (MPG) is
+holder of all proprietary rights on this computer program.
+You can only use this computer program if you have closed
+a license agreement with MPG or you get the right to use the computer
+program from someone who is authorized to grant you that right.
+Any use of the computer program without a valid license is prohibited and
+liable to prosecution.
+
+Copyright©2019 Max-Planck-Gesellschaft zur Förderung
+der Wissenschaften e.V. (MPG). acting on behalf of its Max Planck Institute
+for Intelligent Systems and the Max Planck Institute for Biological
+Cybernetics. All rights reserved.
+
+Contact: oslab@tuebingen.mpg.de
+"""
 
 import argparse
 import os
 import os.path as osp
-
 import pickle
 
 import numpy as np
 
 
 def clean_fn(fn, output_folder='output'):
+    """Remove chumpy objects from the pickle file."""
     with open(fn, 'rb') as body_file:
         body_data = pickle.load(body_file)
 
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     input_models = args.input_models
     output_folder = args.output_folder
     if not osp.exists(output_folder):
-        print('Creating directory: {}'.format(output_folder))
+        print(f'Creating directory: {output_folder}')
         os.makedirs(output_folder)
 
     for input_model in input_models:

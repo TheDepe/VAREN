@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+"""Init file for full varen package."""
 # Max-Planck-Gesellschaft zur Förderung der Wissenschaften e.V. (MPG) is
 # holder of all proprietary rights on this computer program.
 # You can only use this computer program if you have closed
@@ -14,8 +13,4 @@
 #
 # Contact: ps-license@tuebingen.mpg.de
 
-from .body_models import (
-    SMAL,
-    HSMAL,
-    VAREN
-)
+from .body_models import HSMAL, SMAL, VAREN  # noqa: F401

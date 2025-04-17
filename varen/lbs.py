@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+"""Linear Blend Skinning (LBS) and related functions."""
 # Max-Planck-Gesellschaft zur Förderung der Wissenschaften e.V. (MPG) is
 # holder of all proprietary rights on this computer program.
 # You can only use this computer program if you have closed
@@ -14,62 +13,58 @@
 #
 # Contact: ps-license@tuebingen.mpg.de
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+from typing import Optional
 
-from typing import Tuple, List, Optional
 import numpy as np
-
 import torch
 import torch.nn.functional as F
 
-from .utils import rot_mat_to_euler, Tensor, MuscleDeformer
+from .utils import MuscleDeformer, Tensor, rot_mat_to_euler
 
 
-def find_dynamic_lmk_idx_and_bcoords(
+def find_dynamic_lmk_idx_and_bcoords(  # noqa: PLR0913, PLR0917
     vertices: Tensor,
     pose: Tensor,
     dynamic_lmk_faces_idx: Tensor,
     dynamic_lmk_b_coords: Tensor,
-    neck_kin_chain: List[int],
+    neck_kin_chain: list[int],
     pose2rot: bool = True,
-) -> Tuple[Tensor, Tensor]:
-    ''' Compute the faces, barycentric coordinates for the dynamic landmarks
+) -> tuple[Tensor, Tensor]:
+    """Compute the faces, barycentric coordinates for the dynamic landmarks.
 
+    To do so, we first compute the rotation of the neck around the y-axis
+    and then use a pre-computed look-up table to find the faces and the
+    barycentric coordinates that will be used.
 
-        To do so, we first compute the rotation of the neck around the y-axis
-        and then use a pre-computed look-up table to find the faces and the
-        barycentric coordinates that will be used.
+    Special thanks to Soubhik Sanyal (soubhik.sanyal@tuebingen.mpg.de)
+    for providing the original TensorFlow implementation and for the LUT.
 
-        Special thanks to Soubhik Sanyal (soubhik.sanyal@tuebingen.mpg.de)
-        for providing the original TensorFlow implementation and for the LUT.
+    Parameters
+    ----------
+    vertices: torch.tensor BxVx3, dtype = torch.float32
+        The tensor of input vertices
+    pose: torch.tensor Bx(Jx3), dtype = torch.float32
+        The current pose of the body model
+    dynamic_lmk_faces_idx: torch.tensor L, dtype = torch.long
+        The look-up table from neck rotation to faces
+    dynamic_lmk_b_coords: torch.tensor Lx3, dtype = torch.float32
+        The look-up table from neck rotation to barycentric coordinates
+    neck_kin_chain: list
+        A python list that contains the indices of the joints that form the
+        kinematic chain of the neck.
+    pose2rot: bool, optional
+        Flag on whether to convert the input pose tensor to rotation
 
-        Parameters
-        ----------
-        vertices: torch.tensor BxVx3, dtype = torch.float32
-            The tensor of input vertices
-        pose: torch.tensor Bx(Jx3), dtype = torch.float32
-            The current pose of the body model
-        dynamic_lmk_faces_idx: torch.tensor L, dtype = torch.long
-            The look-up table from neck rotation to faces
-        dynamic_lmk_b_coords: torch.tensor Lx3, dtype = torch.float32
-            The look-up table from neck rotation to barycentric coordinates
-        neck_kin_chain: list
-            A python list that contains the indices of the joints that form the
-            kinematic chain of the neck.
-        dtype: torch.dtype, optional
+    Returns
+    -------
+    dyn_lmk_faces_idx: torch.tensor, dtype = torch.long
+        A tensor of size BxL that contains the indices of the faces that
+        will be used to compute the current dynamic landmarks.
+    dyn_lmk_b_coords: torch.tensor, dtype = torch.float32
+        A tensor of size BxL that contains the indices of the faces that
+        will be used to compute the current dynamic landmarks.
 
-        Returns
-        -------
-        dyn_lmk_faces_idx: torch.tensor, dtype = torch.long
-            A tensor of size BxL that contains the indices of the faces that
-            will be used to compute the current dynamic landmarks.
-        dyn_lmk_b_coords: torch.tensor, dtype = torch.float32
-            A tensor of size BxL that contains the indices of the faces that
-            will be used to compute the current dynamic landmarks.
-    '''
-
+    """
     dtype = vertices.dtype
     batch_size = vertices.shape[0]
 
@@ -111,37 +106,41 @@ def vertices2landmarks(
     lmk_faces_idx: Tensor,
     lmk_bary_coords: Tensor
 ) -> Tensor:
-    ''' Calculates landmarks by barycentric interpolation
+    """Calculate landmarks by barycentric interpolation.
 
-        Parameters
-        ----------
-        vertices: torch.tensor BxVx3, dtype = torch.float32
-            The tensor of input vertices
-        faces: torch.tensor Fx3, dtype = torch.long
-            The faces of the mesh
-        lmk_faces_idx: torch.tensor L, dtype = torch.long
-            The tensor with the indices of the faces used to calculate the
-            landmarks.
-        lmk_bary_coords: torch.tensor Lx3, dtype = torch.float32
-            The tensor of barycentric coordinates that are used to interpolate
-            the landmarks
+    Parameters
+    ----------
+    vertices: torch.tensor BxVx3, dtype = torch.float32
+        The tensor of input vertices
+    faces: torch.tensor Fx3, dtype = torch.long
+        The faces of the mesh
+    lmk_faces_idx: torch.tensor L, dtype = torch.long
+        The tensor with the indices of the faces used to calculate the
+        landmarks.
+    lmk_bary_coords: torch.tensor Lx3, dtype = torch.float32
+        The tensor of barycentric coordinates that are used to interpolate
+        the landmarks
 
-        Returns
-        -------
-        landmarks: torch.tensor BxLx3, dtype = torch.float32
-            The coordinates of the landmarks for each mesh in the batch
-    '''
+    Returns
+    -------
+    landmarks: torch.tensor BxLx3, dtype = torch.float32
+        The coordinates of the landmarks for each mesh in the batch
+
+    """
     # Extract the indices of the vertices for each face
     # BxLx3
     batch_size, num_verts = vertices.shape[:2]
     device = vertices.device
-
-    lmk_faces = torch.index_select(faces, 0, lmk_faces_idx.view(-1).to(torch.long)).view(
+    # The '.to(torch.long)'.
+    # added to make the trace work in c++,
+    # otherwise you get a runtime error in c++:
+    # 'index_select(): Expected dtype int32 or int64 for index'
+    lmk_faces = torch.index_select(
+        faces,
+        0,
+        lmk_faces_idx.view(-1).to(torch.long)
+        ).view(
         batch_size, -1, 3)
-                        #The '.to(torch.long)'.
-                        # added to make the trace work in c++,
-                        # otherwise you get a runtime error in c++:
-                        # 'index_select(): Expected dtype int32 or int64 for index'
 
     lmk_faces += torch.arange(
         batch_size, dtype=torch.long, device=device).view(-1, 1, 1) * num_verts
@@ -153,7 +152,7 @@ def vertices2landmarks(
     return landmarks
 
 
-def lbs(
+def lbs(  # noqa: PLR0913, PLR0914, PLR0917
     betas: Tensor,
     pose: Tensor,
     v_template: Tensor,
@@ -164,45 +163,47 @@ def lbs(
     lbs_weights: Tensor,
     pose2rot: bool = True,
     muscle_deformer: Optional[MuscleDeformer] = None,
-) -> Tuple[Tensor, Tensor]:
-    ''' Performs Linear Blend Skinning with the given shape and pose parameters
+) -> tuple[Tensor, Tensor]:
+    """Perform Linear Blend Skinning with the given shape and pose parameters.
 
-        Parameters
-        ----------
-        betas : torch.tensor BxNB
-            The tensor of shape parameters
-        pose : torch.tensor Bx(J + 1) * 3
-            The pose parameters in axis-angle format
-        v_template torch.tensor BxVx3
-            The template mesh that will be deformed
-        shapedirs : torch.tensor 1xNB
-            The tensor of PCA shape displacements
-        posedirs : torch.tensor Px(V * 3)
-            The pose PCA coefficients
-        J_regressor : torch.tensor JxV
-            The regressor array that is used to calculate the joints from
-            the position of the vertices
-        parents: torch.tensor J
-            The array that describes the kinematic tree for the model
-        lbs_weights: torch.tensor N x V x (J + 1)
-            The linear blend skinning weights that represent how much the
-            rotation matrix of each part affects each vertex
-        pose2rot: bool, optional
-            Flag on whether to convert the input pose tensor to rotation
-            matrices. The default value is True. If False, then the pose tensor
-            should already contain rotation matrices and have a size of
-            Bx(J + 1)x9
-        dtype: torch.dtype, optional
+    Parameters
+    ----------
+    betas: torch.tensor BxNB
+        The tensor of shape parameters.
+    pose: torch.tensor Bx(J + 1) * 3
+        The pose parameters in axis-angle format.
+    v_template: torch.tensor BxVx3
+        The template mesh that will be deformed.
+    shapedirs: torch.tensor Vx3xNB
+        The tensor of PCA shape displacements.
+    posedirs: torch.tensor Px(V * 3)
+        The pose PCA coefficients.
+    J_regressor: torch.tensor JxV
+        The regressor array that is used to calculate the joints from
+        the position of the vertices.
+    parents: torch.tensor J
+        The array that describes the kinematic tree for the model.
+    lbs_weights: torch.tensor Vx(J + 1)
+        The linear blend skinning weights that represent how much the
+        rotation matrix of each part affects each vertex.
+    pose2rot: bool, optional
+        Flag on whether to convert the input pose tensor to rotation
+        matrices. The default value is True. If False, then the pose tensor
+        should already contain rotation matrices and have a size of
+        Bx(J + 1)x9.
+    muscle_deformer: Optional[MuscleDeformer], optional
+        An optional muscle deformer object that applies additional
+        deformations to the vertices based on muscle activations.
 
-        Returns
-        -------
-        verts: torch.tensor BxVx3
-            The vertices of the mesh after applying the shape and pose
-            displacements.
-        joints: torch.tensor BxJx3
-            The joints of the model
-    '''
+    Returns
+    -------
+    verts: torch.tensor BxVx3
+        The vertices of the mesh after applying the shape and pose
+        displacements.
+    joints: torch.tensor BxJx3
+        The joints of the model
 
+    """
     batch_size = max(betas.shape[0], pose.shape[0])
     device, dtype = betas.device, betas.dtype
 
@@ -244,16 +245,16 @@ def lbs(
 
 
 def get_rotmats(pose, pose2rot):
+    """Convert pose to rotation matrices."""
     batch_size = pose.shape[0]
 
     if pose2rot:
         return batch_rodrigues(pose.view(-1, 3)).view([batch_size, -1, 3, 3])
-    else:
-        return pose.view(batch_size, -1, 3, 3)
+    return pose.view(batch_size, -1, 3, 3)
 
 
-        
 def pose_deformations(rot_mats, posedirs):
+    """Convert rotation matrices and weights to 3D deformations."""
     dtype, device = rot_mats.dtype, rot_mats.device
     batch_size = rot_mats.shape[0]
 
@@ -261,15 +262,17 @@ def pose_deformations(rot_mats, posedirs):
     pose_feature = (rot_mats[:, 1:, :, :] - ident).view([batch_size, -1])
     pose_offsets = torch.matmul(
         pose_feature, posedirs).view(batch_size, -1, 3)
-    
+
     return pose_offsets
 
+
 def neural_pose_deformations(vertices, muscle_deformer):
-    # Return just the muscle deformations
+    """Convert vertices and muscle deformations to 3D deformations."""
     return muscle_deformations(vertices, muscle_deformer)[1]
 
+
 def vertices2joints(J_regressor: Tensor, vertices: Tensor) -> Tensor:
-    ''' Calculates the 3D joint locations from the vertices
+    """Calculate the 3D joint locations from the vertices.
 
     Parameters
     ----------
@@ -283,14 +286,13 @@ def vertices2joints(J_regressor: Tensor, vertices: Tensor) -> Tensor:
     -------
     torch.tensor BxJx3
         The location of the joints
-    '''
 
+    """
     return torch.einsum('bik,ji->bjk', [vertices, J_regressor])
 
 
 def blend_shapes(betas: Tensor, shape_disps: Tensor) -> Tensor:
-    ''' Calculates the per vertex displacement due to the blend shapes
-
+    """Calculate the per vertex displacement due to the blend shapes.
 
     Parameters
     ----------
@@ -303,8 +305,8 @@ def blend_shapes(betas: Tensor, shape_disps: Tensor) -> Tensor:
     -------
     torch.tensor BxVx3
         The per-vertex displacement due to shape deformation
-    '''
 
+    """
     # Displacement[b, m, k] = sum_{l} betas[b, l] * shape_disps[m, k, l]
     # i.e. Multiply each shape displacement by its corresponding beta and
     # then sum them.
@@ -314,19 +316,20 @@ def blend_shapes(betas: Tensor, shape_disps: Tensor) -> Tensor:
 
 def batch_rodrigues(
     rot_vecs: Tensor,
-    epsilon: float = 1e-8,
 ) -> Tensor:
-    ''' Calculates the rotation matrices for a batch of rotation vectors
-        Parameters
-        ----------
-        rot_vecs: torch.tensor Nx3
-            array of N axis-angle vectors
-        Returns
-        -------
-        R: torch.tensor Nx3x3
-            The rotation matrices for the given axis-angle parameters
-    '''
+    """Calculate the rotation matrices for a batch of rotation vectors.
 
+    Parameters
+    ----------
+    rot_vecs: torch.tensor Nx3
+        array of N axis-angle vectors
+
+    Returns
+    -------
+    R: torch.tensor Nx3x3
+        The rotation matrices for the given axis-angle parameters
+
+    """
     batch_size = rot_vecs.shape[0]
     device, dtype = rot_vecs.device, rot_vecs.dtype
 
@@ -350,13 +353,16 @@ def batch_rodrigues(
 
 
 def transform_mat(R: Tensor, t: Tensor) -> Tensor:
-    ''' Creates a batch of transformation matrices
-        Args:
-            - R: Bx3x3 array of a batch of rotation matrices
-            - t: Bx3x1 array of a batch of translation vectors
-        Returns:
-            - T: Bx4x4 Transformation matrix
-    '''
+    """Create a batch of transformation matrices.
+
+    Args:
+        R: Bx3x3 array of a batch of rotation matrices
+        t: Bx3x1 array of a batch of translation vectors
+
+    Returns:
+        T: Bx4x4 Transformation matrix
+
+    """
     # No padding left or right, only add an extra row
     return torch.cat([F.pad(R, [0, 0, 0, 1]),
                       F.pad(t, [0, 0, 0, 1], value=1)], dim=2)
@@ -368,8 +374,7 @@ def batch_rigid_transform(
     parents: Tensor,
     dtype=torch.float32
 ) -> Tensor:
-    """
-    Applies a batch of rigid transformations to the joints
+    """Apply a batch of rigid transformations to the joints.
 
     Parameters
     ----------
@@ -389,8 +394,8 @@ def batch_rigid_transform(
     rel_transforms : torch.tensor BxNx4x4
         The relative (with respect to the root joint) rigid transformations
         for all the joints
-    """
 
+    """
     joints = torch.unsqueeze(joints, dim=-1)
 
     rel_joints = joints.clone()
@@ -418,21 +423,24 @@ def batch_rigid_transform(
     rel_transforms = transforms - F.pad(
         torch.matmul(transforms, joints_homogen), [3, 0, 0, 0, 0, 0, 0, 0])
 
-    return posed_joints, rel_transforms
+    return posed_joints.to(dtype), rel_transforms.to(dtype)
 
 
 def muscle_deformations(vertices, muscle_deformer):
-
-
+    """Calculate the muscle deformations for the given vertices."""
     betas_muscle = muscle_deformer.betas_muscle
     Bm = muscle_deformer.Bm
     muscle_idxs = muscle_deformer.muscle_idxs
 
     mdv = torch.zeros_like(vertices)
     for i in range(len(Bm)):
-        if Bm[i] is not None: # Handle Muscle with no Vertices
+        if Bm[i] is not None:  # Handle Muscle with no Vertices
             idx = muscle_idxs[i]
-            mdv[:, idx] = Bm[i].forward(betas_muscle[:, i]).view(vertices.shape[0], -1, 3)
+            mdv[:, idx] = Bm[i].forward(
+                betas_muscle[:, i]
+                ).view(
+                    vertices.shape[0],
+                    -1,
+                    3)
 
     return vertices + mdv, mdv
-     

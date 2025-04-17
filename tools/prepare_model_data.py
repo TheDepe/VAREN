@@ -1,22 +1,45 @@
+"""Script for extracting model data from old checkpoints.
+
+Extracts the Bm and betas_muscle_predictor weights from the original model
+checkpoints, and saves them to their own newly formatted checkpoint file.
+
+The new checkpoint file is structured to work with the updated (current) VAREN
+model, which has a modern structure compared to the original training code and
+model.
+
+VAREN model takes a simplified model structure/naming convention than in
+the originally trained model. Specifically, the MuscleBetaPredictor and
+the MuscleDeformer remain the same, while the surrounding code structure
+is simplified. To account for this, the ckpt.path file needs to be
+adjusted.
+
+The weights and biases for both the MuscleBetaPredictor and the
+MuscleDeformer are extracted and placed in their own sub-dictionaries
+inside the checkpoint. These are accessable through
+ckpt['betas_muscle_predictor'] and ckpt['Bm], respectively.
+"""
+import argparse
 import os
 import pickle
-import argparse
 from collections import OrderedDict
+
+import torch
 
 
 def prepare_checkpoint(ckpt: OrderedDict) -> OrderedDict:
-    """
-    VAREN model takes a simplified model structure/naming convention than in the originally trained model.
-    Specifically, the MuscleBetaPredictor and the MuscleDeformer remain the same, while the surrounding 
-    code structure is simplified. To account for this, the ckpt.path file needs to be adjusted.
+    """Extract the Bm and betas_muscle_predictor weights from original ckpt.
 
-    The weights and biases for both the MuscleBetaPredictor and the MuscleDeformer are extracted and placed in their own sub-dictionaries inside the checkpoint.
-    These are accessable through ckpt['betas_muscle_predictor'] and ckpt['Bm], respectively.
-    
+    Args:
+        ckpt (OrderedDict): Original checkpoint.
+
+    Returns:
+        OrderedDict: New checkpoint with extracted weights.
+
     """
     new_ckpt = {}
-    for key in ckpt.keys():
-        # rename key by removing smal. from the start if it exstis and overwrite the ckpt   
+    for key in ckpt:
+        # rename key by removing smal. from the start if it exstis and
+        # overwrite the ckpt
         new_key = key.replace('smal.', '')
         # if starts with Bm. then add to sub dict called Bm
         if new_key.startswith('Bm.'):
@@ -25,35 +48,40 @@ def prepare_checkpoint(ckpt: OrderedDict) -> OrderedDict:
             # remove Bm. from name
             new_key = new_key.replace('Bm.', '')
             new_ckpt['Bm'][new_key] = ckpt[key]
+        # if starts with betas_muscle_predictor then add to sub dict called
+        # betas_muscle_predictor
+        elif new_key.startswith('betas_muscle_predictor.'):
+            if 'betas_muscle_predictor' not in new_ckpt:
+                new_ckpt['betas_muscle_predictor'] = {}
+            # remove betas_muscle_predictor. from name
+            new_key = new_key.replace('betas_muscle_predictor.', '')
+            new_ckpt['betas_muscle_predictor'][new_key] = ckpt[key]
         else:
-            # if starts with betas_muscle_predictor then add to sub dict called betas_muscle_predictor
-            if new_key.startswith('betas_muscle_predictor.'):
-                if 'betas_muscle_predictor' not in new_ckpt:
-                    new_ckpt['betas_muscle_predictor'] = {}
-                # remove betas_muscle_predictor. from name
-                new_key = new_key.replace('betas_muscle_predictor.', '')
-                new_ckpt['betas_muscle_predictor'][new_key] = ckpt[key]
-            else:
-                new_ckpt[new_key] = ckpt[key]
-    
+            new_ckpt[new_key] = ckpt[key]
+
     return OrderedDict(new_ckpt)
-        
+
 
 def files_exist(files: list) -> bool:
-    """
-    Check if files exist.
-    """
-    success = True # updated in loop
+    """Check if files exist."""
+    success = True  # updated in loop
     for file_path in files:
         if not os.path.isfile(file_path):
             print(f"Warning: File not found - {file_path}.")
             success = False
-    
+
     return success
 
+
 def join_pkl_data(files: list) -> dict:
-    """ 
-    
+    """Join multiple pickle files into one dictionary.
+
+    Args:
+        files (list): List of pickle files to join.
+
+    Returns:
+        dict: Combined dictionary from all pickle files.
+
     """
     new_dict = {}
     for file in files:
@@ -64,45 +92,58 @@ def join_pkl_data(files: list) -> dict:
 
 
 def save_pkl(data, file_name) -> None:
+    """Save a pickle file to disk."""
     with open(file_name, 'wb') as f:
-            pickle.dump(data, f)
+        pickle.dump(data, f)
+
 
 def main():
+    """Load original model data are prepare it for the VAREN model format."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_dir", type=str, default="models/varen")
-    parser.add_argument("--ckpt_name", type=str, default="pred_net_100.pth", help="Name of the checkpoint .pth file")
+    parser.add_argument(
+        "--ckpt_name",
+        type=str,
+        default="pred_net_100.pth",
+        help="Name of the checkpoint .pth file"
+        )
     args = parser.parse_args()
-    
+
     # 1. Combine downloaded files into 1 clean VAREN.pkl
-    
+
     # Define file paths
     base_pkl = os.path.join(args.model_dir, "varen_smal_real_horse.pkl")
-    seg_data = os.path.join(args.model_dir, "varen_smal_real_horse_seg_data.pkl")
+    seg_data = os.path.join(
+        args.model_dir, "varen_smal_real_horse_seg_data.pkl"
+        )
 
     # list of files to join
     pkl_files = [base_pkl, seg_data]
 
     # If files are found, process and save
     if files_exist(pkl_files):
-        varen_data = join_pkl_data(pkl_files) # join data
-        save_pkl(varen_data, os.path.join(args.model_dir,'VAREN.pkl'))
-        print(f"Saved joined pickle data to {os.path.join(args.model_dir,'VAREN.pkl')}")
+        varen_data = join_pkl_data(pkl_files)  # join data
+        save_pkl(varen_data, os.path.join(args.model_dir, 'VAREN.pkl'))
+        print(
+            f"Saved joined pickle data to \
+            {os.path.join(args.model_dir, 'VAREN.pkl')}"
+            )
     else:
         print("Skipping pkl preparation.")
-        
 
     # 2. Load and prepare trained model
     ckpt_path = os.path.join(args.model_dir, args.ckpt_name)
     if os.path.exists(ckpt_path):
-        import torch
+
         ckpt = torch.load(ckpt_path, weights_only=True)
         new_ckpt = prepare_checkpoint(ckpt=ckpt)
         torch.save(new_ckpt, os.path.join(args.model_dir, "varen.pth"))
-        print(f"Saved cleaned VAREN checkpoint to {os.path.join(args.model_dir, 'varen.pth')}")
+        print(
+            f"Saved cleaned VAREN checkpoint to \
+            {os.path.join(args.model_dir, 'varen.pth')}"
+            )
     else:
         print(f"Warning: File not found - {ckpt_path}. Skipping operation.")
-    
-
 
 
 if __name__ == "__main__":
