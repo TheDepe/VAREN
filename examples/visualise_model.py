@@ -1,4 +1,6 @@
+"""Script for visualising the VAREN model and exporting meshes."""
 import argparse
+import json
 import os
 
 import numpy as np
@@ -9,7 +11,7 @@ from varen import VAREN
 
 
 def main(args):
-
+    """Load the VAREN model and visualise."""
     output_path = args.output_path
 
     # Check if the output folder exists
@@ -28,36 +30,63 @@ def main(args):
     varen_ext = VAREN(model_path, use_muscle_deformations=True)
     NUM_JOINTS = varen_ext.NUM_JOINTS
 
-    pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
-    shape = torch.rand(1, 39)
+    if args.params is not None:
+        with open(args.params, encoding=None) as f:
+            params = json.load(f)
+            pose = torch.tensor(params['pose']).unsqueeze(0)
+            shape = torch.tensor(params['betas']).unsqueeze(0)
+            global_orient = torch.tensor(params['global_orient']).unsqueeze(0)
+    else:
+        pose = (torch.rand(1, NUM_JOINTS * 3) - 0.5) * 0.3
+        shape = torch.rand(1, 39)
+        global_orient = torch.rand(1, 3) * 0
+
     transl = torch.rand(1, 3) * 0
-    global_orient = torch.rand(1, 3) * 0
 
     MESH_COLOUR = (torch.rand(3) * 255).int()
 
     # Process base model
-    model_output_base = varen_base(body_pose=pose, betas=shape, transl=transl, global_orient=global_orient)
+    model_output_base = varen_base(
+        body_pose=pose,
+        betas=shape,
+        transl=transl,
+        global_orient=global_orient
+        )
     vertices_base = model_output_base.vertices.squeeze().detach().numpy()
     joints_base = model_output_base.joints.squeeze().detach().numpy()
     faces_base = varen_base.faces
 
-    mesh_base = trimesh.Trimesh(vertices_base, faces_base, face_colors=MESH_COLOUR)
+    mesh_base = trimesh.Trimesh(
+        vertices_base,
+        faces_base,
+        face_colors=MESH_COLOUR
+        )
     joints_pcd_base = trimesh.points.PointCloud(joints_base, size=0.01)
 
     # Process extended model
-    model_output_ext = varen_ext(body_pose=pose, betas=shape, transl=transl, global_orient=global_orient)
+    model_output_ext = varen_ext(
+        body_pose=pose,
+        betas=shape,
+        transl=transl,
+        global_orient=global_orient
+        )
     vertices_ext = model_output_ext.vertices.squeeze().detach().numpy()
     joints_ext = model_output_ext.joints.squeeze().detach().numpy()
     faces_ext = varen_ext.faces
 
-    mesh_ext = trimesh.Trimesh(vertices_ext, faces_ext, face_colors=(MESH_COLOUR - 255) * -1)
+    mesh_ext = trimesh.Trimesh(
+        vertices_ext,
+        faces_ext,
+        face_colors=(MESH_COLOUR - 255) * -1
+        )
     joints_pcd_ext = trimesh.points.PointCloud(joints_ext, size=0.01)
 
     # mesh_ext.visual.face_colors[:] = np.array([138, 42, 173, 150]) # purple
     # normals = (mesh_ext.face_normals + 1) / 2
     # colours = (normals * 255).astype(np.uint8)
     # colours = np.hstack((colours, np.full((colours.shape[0], 1), 200)))
-    # colors = trimesh.visual.interpolate(values=mesh_ext.face_normals, color_map='viridis')
+    # colors = trimesh.visual.interpolate(
+    # values=mesh_ext.face_normals, color_map='viridis')
 
     # mesh_ext.visual.face_colors = colours
     joints_pcd_ext.colors = np.array([0, 0, 0, 255])
@@ -68,8 +97,10 @@ def main(args):
 
     # Export meshes to files
     if args.save_meshes:
-        base_file_path = os.path.join(output_path, 'VAREN_base.ply') if output_path else 'VAREN_base.ply'
-        full_file_path = os.path.join(output_path, 'VAREN_full.ply') if output_path else 'VAREN_full.ply'
+        base_file_path = os.path.join(output_path, 'VAREN_base.ply') \
+            if output_path else 'VAREN_base.ply'
+        full_file_path = os.path.join(output_path, 'VAREN_full.ply') \
+            if output_path else 'VAREN_full.ply'
 
         trimesh.exchange.export.export_mesh(mesh_base, base_file_path)
         trimesh.exchange.export.export_mesh(mesh_ext, full_file_path)
@@ -80,10 +111,28 @@ def main(args):
 # add arguments for output folder path
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Export VAREN meshes to a specified folder.")
-    parser.add_argument('--model_path', type=str, default='models/varen', help='Location of saved model files.')
-    parser.add_argument('--output_path', type=str, default="", help="Folder to save the exported mesh files. Default is the current directory.")
-    parser.add_argument('--save-meshes', action='store_true', help="Option to save meshes.")
+    parser = argparse.ArgumentParser(
+        description="Export VAREN meshes to a specified folder.")
+    parser.add_argument(
+        '--model_path',
+        type=str,
+        default='models/varen',
+        help='Location of saved model files.'
+        )
+    parser.add_argument(
+        '--output_path',
+        type=str,
+        default="",
+        help="Folder to save the exported mesh files. Default is the current \
+            directory.")
+    parser.add_argument(
+        '--save-meshes', action='store_true', help="Option to save meshes.")
+    parser.add_argument(
+        "--params",
+        type=str,
+        default="examples/example_params.json",
+        help="Params to load"
+    )
     args = parser.parse_args()
 
     main(args)
