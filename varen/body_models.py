@@ -767,8 +767,8 @@ class VAREN(HSMAL):
         output = VARENOutput(vertices=vertices if return_verts else None,
                         global_orient=global_orient,
                         body_pose=body_pose,
-                        joints=joints[:, :self.NUM_JOINTS],
-                        surface_keypoints=joints[:, self.NUM_JOINTS:],
+                        joints=joints[:, :self.NUM_JOINTS+1],
+                        surface_keypoints=joints[:, self.NUM_JOINTS+1:],
                         body_betas=betas,
                         muscle_betas=(
                             muscle_deformer.betas_muscle
