@@ -4,6 +4,5 @@ repos:
       - id: run-pytest
         name: Run Pytest
         entry: pytest
-        language: system  # assumes pytest is available in your environment
-        types: [python]
-        pass_filenames: false  # prevent passing filenames to pytest
+        language: system
+        pass_filenames: false
