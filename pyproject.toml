@@ -30,6 +30,9 @@ all = [
     "pre-commit"
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.setuptools]
 packages = ["varen"]
 
