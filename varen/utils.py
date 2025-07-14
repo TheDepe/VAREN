@@ -33,7 +33,6 @@ class ModelOutput:
         full_pose: The full pose of the SMPL model.
         global_orient: The global orientation of the SMPL model.
         transl: The translation of the SMPL model.
-        v_shaped: The shape of the vertices.
 
     Note:
         The attributes are optional and can be None.
@@ -46,7 +45,6 @@ class ModelOutput:
     full_pose: Optional[Tensor] = None
     global_orient: Optional[Tensor] = None
     transl: Optional[Tensor] = None
-    v_shaped: Optional[Tensor] = None
 
     def __getitem__(self, key):
         """Return the value of the attribute with the given key."""

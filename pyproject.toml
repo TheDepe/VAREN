@@ -21,7 +21,14 @@ dependencies = [
 
 [project.optional-dependencies]
 trimesh = ["trimesh>=2.37.6", "pyglet<2.0"]
-all = ["trimesh>=2.37.6", "pyglet<2.0"]
+dev = ["pytest","pre-commit"]
+
+all = [
+    "trimesh>=2.37.6",
+    "pyglet<2.0",
+    "pytest",
+    "pre-commit"
+]
 
 [tool.setuptools]
 packages = ["varen"]

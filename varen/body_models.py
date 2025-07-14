@@ -2,6 +2,7 @@
 import os
 import os.path as osp
 import pickle
+import warnings
 from collections import namedtuple
 from typing import Optional, Union
 
@@ -61,6 +62,7 @@ class SMAL(nn.Module):
         joint_mapper=None,
         vertex_ids: dict[str, int] = None,
         v_template: Optional[Union[Tensor, Array]] = None,
+        device='cpu',
         **kwargs
     ) -> None:
         """SMPL model constructor.
@@ -118,15 +120,14 @@ class SMAL(nn.Module):
         """
         # NOTE: No PCA on the pose space
 
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
         if data_struct is None:
             if osp.isdir(model_path):
                 model_fn = 'SMAL.{ext}'.format(ext='pkl')
                 smpl_path = os.path.join(model_path, model_fn)
             else:
                 smpl_path = model_path
-            assert osp.exists(smpl_path), f'Path {smpl_path} does not exist!'
+            if not osp.exists(smpl_path):
+                raise FileNotFoundError(f'Path {smpl_path} does not exist!')
 
             with open(smpl_path, 'rb') as smpl_file:
                 data_struct = Struct(**pickle.load(smpl_file,
@@ -310,7 +311,7 @@ class SMAL(nn.Module):
         """Add shape contribution to the model template."""
         betas = betas if betas is not None else self.betas
         v_shaped = self.v_template + blend_shapes(betas, self.shapedirs)
-        return SMALOutput(vertices=v_shaped, betas=betas, v_shaped=v_shaped)
+        return SMALOutput(vertices=v_shaped, betas=betas)
 
     def forward(  # noqa: PLR0913, PLR0917
         self,
@@ -589,12 +590,13 @@ class VAREN(HSMAL):
 
                 model_fn = '{}.{ext}'.format(
                     "VAREN" if model_file_name is None
-                    else model_file_name, ext='pkl'
+                    else model_file_name, ext=ext.replace('.', '')
                     )
                 varen_path = os.path.join(model_path, model_fn)
             else:
                 varen_path = model_path
-            assert osp.exists(varen_path), f'Path {varen_path} does not exist!'
+            if not osp.exists(varen_path):
+                raise FileNotFoundError(f'Path {varen_path} does not exist!')
 
             with open(varen_path, 'rb') as file:
                 data_struct = Struct(**pickle.load(file,
@@ -731,6 +733,16 @@ class VAREN(HSMAL):
             body shape, pose, vertices, muscle activations, etc.
 
         """
+        # Warn if some variant of 'pose' is passed, that isn't 'body_pose'
+        if body_pose is None:
+            for key in kwargs:
+                if 'pose' in key.lower() and key != 'body_pose':
+                    warnings.warn(
+                        f"Unexpected key '{key}' in kwargs. "
+                        "Did you mean 'body_pose'?",
+                        UserWarning, stacklevel=1
+                    )
+
         global_orient = self.global_orient if global_orient \
             is None else global_orient
         body_pose = self.body_pose if body_pose is None else body_pose

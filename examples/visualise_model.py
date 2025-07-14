@@ -41,6 +41,7 @@ def main(args):
         shape = torch.rand(1, 39)
         global_orient = torch.rand(1, 3) * 0
 
+    print(f"DEBUG || {pose.shape=}, {shape.shape=}, {global_orient.shape=}")
     transl = torch.rand(1, 3) * 0
 
     MESH_COLOUR = (torch.rand(3) * 255).int()
