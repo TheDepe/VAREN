@@ -528,7 +528,7 @@ class VAREN(HSMAL):
     NUM_JOINTS = 37  # Results in 38 joints including 0
     SHAPE_SPACE_DIM = 39  # The dimensionality of the shape space for the model
 
-    def __init__(self, model_path: str,  # noqa: PLR0913, PLR0917
+    def __init__(self, model_path: str,  # noqa: PLR0912, PLR0913, PLR0917
                  data_struct: Optional[Struct] = None,
                  num_betas: int = 39,
                  use_muscle_deformations: bool = True,
@@ -697,7 +697,7 @@ class VAREN(HSMAL):
         # Predict offsets based on muscle betas
         self.Bm = self.create_Bm()
 
-    def forward(self,
+    def forward(self,  # noqa: PLR0913, PLR0917
                 betas: Optional[Tensor] = None,
                 body_pose: Optional[Tensor] = None,
                 global_orient: Optional[Tensor] = None,
@@ -705,7 +705,7 @@ class VAREN(HSMAL):
                 return_verts: bool = True,
                 return_full_pose: bool = False,
                 pose2rot: bool = True,
-                **kwargs) -> VARENOutput:  # noqa: ARG002
+                **kwargs) -> VARENOutput:
         """Deform the template using pose and shape.
 
         Args:
@@ -737,7 +737,7 @@ class VAREN(HSMAL):
         warn_if_missing_expected_input("pose", "body_pose", body_pose, kwargs)
         warn_if_missing_expected_input("transl", "transl", transl, kwargs)
         warn_if_missing_expected_input("shape", "betas", betas, kwargs)
-        
+
         global_orient = self.global_orient if global_orient \
             is None else global_orient
         body_pose = self.body_pose if body_pose is None else body_pose
@@ -776,8 +776,8 @@ class VAREN(HSMAL):
         output = VARENOutput(vertices=vertices if return_verts else None,
                         global_orient=global_orient,
                         body_pose=body_pose,
-                        joints=joints[:, :self.NUM_JOINTS+1],
-                        surface_keypoints=joints[:, self.NUM_JOINTS+1:],
+                        joints=joints[:, :self.NUM_JOINTS + 1],
+                        surface_keypoints=joints[:, self.NUM_JOINTS + 1:],
                         body_betas=betas,
                         muscle_betas=(
                             muscle_deformer.betas_muscle
@@ -922,7 +922,9 @@ class VAREN(HSMAL):
         # Append a layer for each muscle
         for i in range(self.num_muscles):
             pose_d = 4
-            input_dim = self.muscle_betas_size * num_joints * pose_d + self.shape_betas_for_muscles
+            input_dim = (
+                self.muscle_betas_size * num_joints * pose_d) + \
+                    self.shape_betas_for_muscles
             out_dim = len(self.muscle_vertex_map[i]) * 3
 
             # Avoid No Op layers if the muscle relates to no vertices
@@ -958,15 +960,16 @@ class VAREN(HSMAL):
                              f"{body_pose.shape}.")
         if betas.shape[1] != self.num_betas:
             raise ValueError(f"Betas shape is incorrect. Expected shape: "
-                             f"[batch_size, {self.num_betas}], got: {betas.shape}.")
-        if transl.shape[1] != 3:
-            raise ValueError(f"Translation shape is incorrect. Expected shape: "
+                             f"[batch_size, {self.num_betas}],"
+                             f"got: {betas.shape}.")
+        if transl.shape[1] != 3:  # noqa: PLR2004
+            raise ValueError(f"Transl shape is incorrect. Expected shape: "
                              f"[batch_size, 3], got: {transl.shape}.")
-        if global_orient.shape[1] != 3:
+        if global_orient.shape[1] != 3:  # noqa: PLR2004
             raise ValueError(f"Global orientation shape is incorrect. "
                              f"Expected shape: [batch_size, 3], "
                              f"got: {global_orient.shape}.")
-        
+
     @property
     def keypoint_information(self) -> dict[str, int]:
         """Return a dictionary with keypoint names and vertex index.
@@ -1071,7 +1074,7 @@ class MuscleBetaPredictor(nn.Module):
 
 
 def warn_if_missing_expected_input(search_term, real_term, value, kwargs):
-    """Emit a warning if an input is None but a similar keyword exists in kwargs.
+    """Warn if an input is None but a similar keyword exists in kwargs.
 
     Args:
         search_term (str): The term to search for in kwargs.
