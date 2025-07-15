@@ -3,6 +3,7 @@ import torch
 
 from varen import VAREN
 from varen.utils import VARENOutput
+import warnings
 
 
 def test_forward_pass_full(varen_model):
@@ -108,3 +109,34 @@ def test_joints_output(varen_model):
     # sizing of everything.
     assert joints.shape[1] == varen_model.NUM_JOINTS + 1, f"Joints shape should match template joints shape {varen_model.NUM_JOINTS + 1}, got: {joints.shape}."
     assert torch.isfinite(joints).all(), "Joints should not contain NaN or Inf values."
+
+
+
+def test_normals_point_outward(varen_model):
+
+    verts = varen_model().vertices[0]
+    faces = varen_model.faces
+    def normals_point_outward(verts, faces):
+        v0 = verts[faces[:, 0]]
+        v1 = verts[faces[:, 1]]
+        v2 = verts[faces[:, 2]]
+
+        face_centers = (v0 + v1 + v2) / 3.0
+        face_normals = torch.nn.functional.normalize(torch.cross(v1 - v0, v2 - v0, dim=1), dim=1)
+
+        mesh_center = verts.mean(dim=0)
+        to_face = torch.nn.functional.normalize(face_centers - mesh_center, dim=1)
+
+        dot = (face_normals * to_face).sum(dim=1)
+        return (dot < 0).any() == False  # True = all outward
+
+    """Test that all face normals point outward from the mesh center."""
+    if not normals_point_outward(verts, faces):
+        warnings.warn(
+            "Some face normals point inward! "
+            "This is currently a known error to do with the trained model and "
+            "the training method. "
+            "Double check to ensure things are working as intended.",
+            stacklevel=1
+        )
+

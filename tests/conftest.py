@@ -1,13 +1,19 @@
-import pytest
-import torch
-from varen import VAREN
+"""Fixtures and configuration for VAREN model tests."""
 from pathlib import Path
 
+import pytest
+import torch
 
+from varen import VAREN
+
+# --------------------------------------------------------------------------- #
 # SET THESE VALUES HERE
 VAREN_PATH = "models/varen"  # Path to VAREN model directory
 VAREN_MODEL_FILE = "VAREN.pkl"  # Name of the VAREN model file
 VAREN_MUSCLE_CKPT_NAME = None  # Name of VAREN muscle checkpoint file
+
+
+# --------------------------------------------------------------------------- #
 
 
 @pytest.fixture(scope="session")
@@ -55,6 +61,7 @@ def varen_model_file_name(varen_model_dir):
 
     return VAREN_MODEL_FILE
 
+
 @pytest.fixture(scope="session")
 def ckpt_file(varen_model_dir):
     """Return the name of the VAREN muscle checkpoint file."""
@@ -73,6 +80,7 @@ def ckpt_file(varen_model_dir):
             )
     return VAREN_MUSCLE_CKPT_NAME
 
+
 @pytest.fixture(scope="module")
 def varen_model_no_muscles(varen_model_dir, varen_model_file_name):
     """Return a VAREN model instance."""
@@ -85,6 +93,7 @@ def varen_model_no_muscles(varen_model_dir, varen_model_file_name):
         ext=ext,
         use_muscle_deformations=False
     )
+
 
 @pytest.fixture(scope="module")
 def varen_model(varen_model_dir, varen_model_file_name, ckpt_file):
@@ -103,32 +112,47 @@ def varen_model(varen_model_dir, varen_model_file_name, ckpt_file):
 
 @pytest.fixture
 def pose_cpu():
+    """Return a dummy pose tensor for testing."""
     return torch.zeros((1, 37 * 3))
+
 
 @pytest.fixture
 def pose_cuda(pose_cpu):
+    """Return a dummy pose tensor on CUDA."""
     return pose_cpu.cuda()
+
 
 @pytest.fixture
 def shape_cpu():
+    """Return a dummy shape tensor for testing."""
     return torch.zeros((1, 39))
+
 
 @pytest.fixture
 def shape_cuda(shape_cpu):
+    """Return a dummy shape tensor on CUDA."""
     return shape_cpu.cuda()
+
 
 @pytest.fixture
 def global_orient_cpu():
+    """Return a dummy global orientation tensor for testing."""
     return torch.zeros((1, 3))
+
 
 @pytest.fixture
 def global_orient_cuda(global_orient_cpu):
+    """Return a dummy global orientation tensor on CUDA."""
     return global_orient_cpu.cuda()
+
 
 @pytest.fixture
 def translation_cpu():
+    """Return a dummy translation tensor for testing."""
     return torch.ones((1, 3))
+
 
 @pytest.fixture
 def translation_cuda(translation_cpu):
+    """Return a dummy translation tensor on CUDA."""
     return translation_cpu.cuda()

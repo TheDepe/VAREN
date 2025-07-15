@@ -734,21 +734,18 @@ class VAREN(HSMAL):
 
         """
         # Warn if some variant of 'pose' is passed, that isn't 'body_pose'
-        if body_pose is None:
-            for key in kwargs:
-                if 'pose' in key.lower() and key != 'body_pose':
-                    warnings.warn(
-                        f"Unexpected key '{key}' in kwargs. "
-                        "Did you mean 'body_pose'?",
-                        UserWarning, stacklevel=1
-                    )
-
+        warn_if_missing_expected_input("pose", "body_pose", body_pose, kwargs)
+        warn_if_missing_expected_input("transl", "transl", transl, kwargs)
+        warn_if_missing_expected_input("shape", "betas", betas, kwargs)
+        
         global_orient = self.global_orient if global_orient \
             is None else global_orient
         body_pose = self.body_pose if body_pose is None else body_pose
         betas = self.betas if betas is None else betas
         transl = self.transl if transl is None else transl
-
+        self.check_inputs(body_pose=body_pose,
+                          global_orient=global_orient,
+                          betas=betas, transl=transl)
         full_pose = torch.cat([global_orient, body_pose], dim=1)
 
         # Muscle Predictor forward pass
@@ -938,6 +935,38 @@ class VAREN(HSMAL):
 
         return Bm
 
+    def check_inputs(self, body_pose, betas, transl, global_orient):
+        """Check if the inputs are valid for the VAREN model.
+
+        Args:
+            body_pose (torch.Tensor): Body pose parameters.
+            betas (torch.Tensor): Shape coefficients.
+            transl (torch.Tensor): Translation parameters.
+            global_orient (torch.Tensor): Global orientation parameters.
+
+        Raises:
+            ValueError: If any of the inputs are None or have incorrect shapes.
+
+        """
+        if body_pose is None or betas is None or transl is None \
+                or global_orient is None:
+            raise ValueError("All inputs must be provided and cannot be None.")
+
+        if body_pose.shape[1] != self.NUM_JOINTS * 3:
+            raise ValueError(f"Body pose shape is incorrect. Expected shape: "
+                             f"[batch_size, {self.NUM_JOINTS * 3}], got: "
+                             f"{body_pose.shape}.")
+        if betas.shape[1] != self.num_betas:
+            raise ValueError(f"Betas shape is incorrect. Expected shape: "
+                             f"[batch_size, {self.num_betas}], got: {betas.shape}.")
+        if transl.shape[1] != 3:
+            raise ValueError(f"Translation shape is incorrect. Expected shape: "
+                             f"[batch_size, 3], got: {transl.shape}.")
+        if global_orient.shape[1] != 3:
+            raise ValueError(f"Global orientation shape is incorrect. "
+                             f"Expected shape: [batch_size, 3], "
+                             f"got: {global_orient.shape}.")
+        
     @property
     def keypoint_information(self) -> dict[str, int]:
         """Return a dictionary with keypoint names and vertex index.
@@ -1039,3 +1068,29 @@ class MuscleBetaPredictor(nn.Module):
         betas_muscle = tensor_a * tensor_b
 
         return betas_muscle, self.A * self.muscledef.weight
+
+
+def warn_if_missing_expected_input(search_term, real_term, value, kwargs):
+    """Emit a warning if an input is None but a similar keyword exists in kwargs.
+
+    Args:
+        search_term (str): The term to search for in kwargs.
+        real_term (str): The expected term that should be used.
+        value (Optional[Any]): The value of the input parameter.
+        kwargs (dict): The keyword arguments dictionary to search in.
+        tag (str): A tag to prepend to the warning message.
+
+    Raises:
+        UserWarning: If the input is None and a similar key exists in kwargs.
+
+    """
+    if value is None:
+        for key in kwargs:
+            if search_term.lower() in key.lower() and key != real_term:
+                warnings.warn((
+                    f"Expected input '{real_term}' is None, but found similar"
+                    f"key '{key}' in kwargs. "
+                    f"Did you mean '{real_term}'?"),
+                    UserWarning,
+                    stacklevel=2
+                )
